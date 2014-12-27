@@ -23,13 +23,13 @@ Mapping namespaces and code locations to files and sources using Clojure runtime
 
 ## Installation
 
-![Clojars Project](http://clojars.org/org.rksm.system-navigator/system-navigator/latest-version.svg)
+[![Clojars Project](http://clojars.org/org.rksm/system-navigator/latest-version.svg)](http://clojars.org/org.rksm/system-navigator)
 
-and
+or
 
 ```xml
 <dependency>
-  <groupId>org.rksm.system-navigator</groupId>
+  <groupId>org.rksm</groupId>
   <artifactId>system-navigator</artifactId>
   <version>0.1.1</version>
 </dependency>
