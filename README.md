@@ -31,7 +31,7 @@ or
 <dependency>
   <groupId>org.rksm</groupId>
   <artifactId>system-navigator</artifactId>
-  <version>0.1.1</version>
+  <version>0.1.3</version>
 </dependency>
 ```
 
