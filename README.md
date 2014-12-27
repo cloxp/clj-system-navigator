@@ -1,6 +1,6 @@
 # clj system-navigator
 
-<img width="256" alt="Compass (PSF)" src="//upload.wikimedia.org/wikipedia/commons/6/6e/Compass_%28PSF%29.png"/>
+<img width="256" alt="Compass (PSF)" src="http://upload.wikimedia.org/wikipedia/commons/6/6e/Compass_%28PSF%29.png"/>
 
 Mapping namespaces and code locations to files and sources using Clojure runtime information.
 
