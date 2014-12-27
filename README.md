@@ -23,7 +23,7 @@ Mapping namespaces and code locations to files and sources using Clojure runtime
 
 ## Installation
 
-[![Clojars Project](http://clojars.org/org.rksm.system-navigator/system-navigator/latest-version.svg)]()
+![Clojars Project](http://clojars.org/org.rksm.system-navigator/system-navigator/latest-version.svg)
 
 and
 
