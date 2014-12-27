@@ -4,20 +4,6 @@
 
 Mapping namespaces and code locations to files and sources using Clojure runtime information.
 
-## Installation
-
-[![Clojars Project](http://clojars.org/org.rksm.system-navigator/system-navigator/latest-version.svg)]
-
-or
-
-```xml
-<dependency>
-  <groupId>org.rksm.system-navigator</groupId>
-  <artifactId>system-navigator</artifactId>
-  <version>0.1.1</version>
-</dependency>
-```
-
 ## Usage
 
 ```clj
@@ -33,6 +19,20 @@ or
 
 (nav/source-for-ns 'clojure.core)
 ; => well, what dou you expect?
+```
+
+## Installation
+
+![Clojars Project](http://clojars.org/org.rksm.system-navigator/system-navigator/latest-version.svg)
+
+and
+
+```xml
+<dependency>
+  <groupId>org.rksm.system-navigator</groupId>
+  <artifactId>system-navigator</artifactId>
+  <version>0.1.1</version>
+</dependency>
 ```
 
 <!-- ## Usage -->
