@@ -1,4 +1,4 @@
-(ns rksm.system-navigator.test
+(ns rksm.system-navigator.ns-test
   (:refer-clojure :exclude [add-classpath])
   (:require [clojure.test :refer :all]
             [rksm.system-navigator :refer :all]
@@ -41,7 +41,7 @@
 
 (comment
 
-  (run-tests 'rksm.system-navigator.test)
+  (run-tests 'rksm.system-navigator.ns-test)
 
   (require '[clojure.java.io :as io])
   (in-ns 'rksm.system-navigator.test)

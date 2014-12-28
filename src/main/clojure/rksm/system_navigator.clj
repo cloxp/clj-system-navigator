@@ -42,11 +42,11 @@
             (filter #(= (.getName %) rel-name))
             first)))
 
-(defn- jar-source-for-ns
+(defn- jar-reader-for-ns
   [class-path-file ns-name]
   (let [jar (java.util.jar.JarFile. class-path-file)
         jar-entry (jar-entry-for-ns jar ns-name)]
-    (-> jar (.getInputStream jar-entry) slurp)))
+    (-> jar (.getInputStream jar-entry) io/reader)))
 
 (defn classpath-from-system-cp-jar
   [jar-file]
@@ -132,17 +132,22 @@
          cp)))
 
 
-(defn source-for-ns
+(defn source-reader-for-ns
   [ns-name]
   (let [f (file-for-ns ns-name)]
     (if (jar? f)
-        (jar-source-for-ns f ns-name)
-        (slurp f))))
+        (jar-reader-for-ns f ns-name)
+        (io/reader f))))
+
+(defn source-for-ns
+  [ns-name]
+  (with-open [rdr (source-reader-for-ns ns-name)]
+    (slurp rdr)))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 (comment
   (classpath)
   (loaded-namespaces)
-  (file-for-ns 'rksm.system-navigator.core)
+  (file-for-ns 'rksm.system-navigator)
   )
