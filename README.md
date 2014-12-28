@@ -34,7 +34,7 @@ Mapping namespaces and code locations to files and sources using Clojure runtime
 
 ```clj
 (require '[rksm.system-navigator.search :as search])
-(search/code-search #"def (x|y)" {:matching #"rksm.*dummy-[0-9]$"})
+(search/code-search #"def (x|y)" :match-ns #"rksm.*dummy-[0-9]$")
 ; => [{:ns ns-2,
 ;      :finds [{:line 5, :match ["def y" "y"], :source "(def y 24)"}]}
 ;     {:ns ns-1,
