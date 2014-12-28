@@ -125,15 +125,14 @@
 
 (defn file-for-ns
   [ns-name]
-  (let [cp (classpath-for-ns ns-name)
-        rel-path (ns-name->rel-path ns-name)]
-       (if (.isDirectory cp)
-         (->> (classpath-for-ns ns-name)
-              clj-files-in-dir
-              (filter #(re-find (re-pattern (str rel-path "$"))
-                                (.getAbsolutePath %)))
-              first)
-         cp)))
+  (if-let [cp (classpath-for-ns ns-name)]
+    (if (.isDirectory cp)
+      (->> (clj-files-in-dir cp)
+           (filter #(re-find
+                     (re-pattern (str (ns-name->rel-path ns-name) "$"))
+                     (.getAbsolutePath %)))
+           first)
+    cp)))
 
 (defn source-reader-for-ns
   [ns-name]
