@@ -6,9 +6,16 @@
 
 (deftest system-navigator
 
+  (require 'rksm.system-navigator.test.dummy-1)
+  (require 'rksm.system-navigator.test.dummy-2)
+
+  (testing "find loaded namespaces"
+    (is (= ['rksm.system-navigator.test.dummy-1 'rksm.system-navigator.test.dummy-2]
+           (loaded-namespaces :matching #"rksm.*dummy-[0-9]$"))))
+
   (testing "namespace to classpath mapping"
     (testing "for dirs"
-      (require 'rksm.system-navigator.test.dummy-1)
+      
       (is
         (->> (classpath-for-ns 'rksm.system-navigator.test.dummy-1)
              str
@@ -20,7 +27,6 @@
 
     (testing "for jars"
       (add-classpath "test-resources/dummy-2-test.jar")
-      (require 'rksm.system-navigator.test.dummy-2)
       (is
         (->> (classpath-for-ns 'rksm.system-navigator.test.dummy-2)
              str
@@ -28,12 +34,10 @@
 
   (testing "map namespaces to sources"
     (testing "for plain clj files"
-      (require 'rksm.system-navigator.test.dummy-1)
       (is (= "(ns rksm.system-navigator.test.dummy-1)\n\n(def x 23)\n"
               (source-for-ns 'rksm.system-navigator.test.dummy-1))))
     (testing "for jars"
       (add-classpath "test-resources/dummy-2-test.jar")
-      (require 'rksm.system-navigator.test.dummy-2)
       (is (= "(ns rksm.system-navigator.test.dummy-2\n    (:gen-class))\n\n(def y 24)\n"
               (source-for-ns 'rksm.system-navigator.test.dummy-2))))))
 
