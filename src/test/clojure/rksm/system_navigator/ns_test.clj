@@ -6,6 +6,7 @@
 
 (deftest system-navigator
 
+  (add-classpath "test-resources/dummy-2-test.jar")
   (require 'rksm.system-navigator.test.dummy-1)
   (require 'rksm.system-navigator.test.dummy-2)
 
@@ -26,7 +27,6 @@
              (re-find #"src/test/clojure/rksm/system_navigator/test/dummy_1.clj$")))))
 
     (testing "for jars"
-      (add-classpath "test-resources/dummy-2-test.jar")
       (is
         (->> (classpath-for-ns 'rksm.system-navigator.test.dummy-2)
              str
@@ -37,7 +37,6 @@
       (is (= "(ns rksm.system-navigator.test.dummy-1)\n\n(def x 23)\n"
               (source-for-ns 'rksm.system-navigator.test.dummy-1))))
     (testing "for jars"
-      (add-classpath "test-resources/dummy-2-test.jar")
       (is (= "(ns rksm.system-navigator.test.dummy-2\n    (:gen-class))\n\n(def y 24)\n"
               (source-for-ns 'rksm.system-navigator.test.dummy-2))))))
 

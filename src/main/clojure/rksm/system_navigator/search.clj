@@ -3,7 +3,6 @@
 
 (defn- code-search-single-ns
   [re ns-name]
-  (source-for-ns 'rksm.system-navigator.search-test)
   (if-let [rdr (source-reader-for-ns ns-name)]
     (with-open [rdr rdr
                 lrdr (clojure.lang.LineNumberingPushbackReader. rdr)]
