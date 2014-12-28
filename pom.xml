@@ -4,7 +4,7 @@
   <groupId>org.rksm</groupId>
   <artifactId>system-navigator</artifactId>
   <packaging>jar</packaging>
-  <version>0.1.4-SNAPSHOT</version>
+  <version>0.1.5-SNAPSHOT</version>
   <name>${artifactId}</name>
   <description>Mapping namespaces and code locations to files and sources using Clojure runtime information.</description>
   <url>http://maven.apache.org</url>
