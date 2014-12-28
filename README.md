@@ -34,11 +34,11 @@ Given a namespace symbol, figure out what file it is defined in. Also read the s
 Search for lines matching a regexp. Namespaces can be blacklisted (`:except` or
 matched with a separate regexp `:match-ns`).
 
-```clj (require
-'[rksm.system-navigator.search :as search]) (search/code-search #"def (x|y)"
-:match-ns #"rksm.*dummy-[0-9]$") ; =>
-[{:ns ns-2, ; :finds [{:line 5, :match ["def y" "y"], :source "(def y 24)"}]} ;
-{:ns ns-1, ; :finds [{:line 4, :match ["def x" "x"], :source "(def x 23)"}]}]
+```clj
+(require '[rksm.system-navigator.search :as search])
+(search/code-search #"def (x|y)"  :match-ns #"rksm.*dummy-[0-9]$")
+; => [{:ns ns-2, ; :finds [{:line 5, :match ["def y" "y"], :source "(def y 24)"}]}
+;     {:ns ns-1, ; :finds [{:line 4, :match ["def x" "x"], :source "(def x 23)"}]}]
 ```
 
 ### accessing namespace info
