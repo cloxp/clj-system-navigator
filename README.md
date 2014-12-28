@@ -6,19 +6,39 @@ Mapping namespaces and code locations to files and sources using Clojure runtime
 
 ## Usage
 
+### finding loaded namespaces
+
+```clj
+(require '[rksm.system-navigator :as nav])
+(nav/loaded-namespaces :matching #"core")
+; => (clojure.core clojure.core.cache clojure.core.cache.tests ...)
+```
+
+### namespace -> source mapping
 ```clj
 (require '[rksm.system-navigator :as nav])
 
 (require 'rksm.system-navigator.test.dummy-1)
+
 (nav/file-for-ns 'rksm.system-navigator.test.dummy-1)
 ; => #<File .../src/test/clojure/rksm/system_navigator/test/dummy_1.clj>
 
-(require 'rksm.system-navigator.test.dummy-1)
 (nav/source-for-ns 'rksm.system-navigator.test.dummy-1)
 ; => "(ns rksm.system-navigator.test.dummy-1)\n\n(def x 23)\n"
 
 (nav/source-for-ns 'clojure.core)
 ; => well, what dou you expect?
+```
+
+### code search in namespaces
+
+```clj
+(require '[rksm.system-navigator.search :as search])
+(search/code-search #"def (x|y)" {:matching #"rksm.*dummy-[0-9]$"})
+; => [{:ns ns-2,
+;      :finds [{:line 5, :match ["def y" "y"], :source "(def y 24)"}]}
+;     {:ns ns-1,
+;      :finds [{:line 4, :match ["def x" "x"], :source "(def x 23)"}]}]
 ```
 
 ## Installation
