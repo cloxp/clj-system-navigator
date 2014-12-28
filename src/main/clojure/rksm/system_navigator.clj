@@ -25,7 +25,6 @@
   (add-classpath (java.net.URL. "file:///Users/robert/clojure/system-navigator/src/main/clojure/"))
   (add-classpath (java.net.URL. "file:///Users/robert/clojure/system-navigator/src/test/clojure/"))
   (add-classpath "/Users/robert/clojure/system-navigator/foo/dummy-2-test.jar")
-
   )
 
 ; -=-=-=-=-=-=-
@@ -86,10 +85,15 @@
           (->> (dp/all-classpath-urls) (map io/file)))))
 
 (defn loaded-namespaces
-  []
-  (-> (classpath)
-      nf/find-namespaces
-      sort))
+  [& {m :matching}]
+  (let [nss (nf/find-namespaces (classpath))
+        filtered (if m (filter #(re-find m (str %)) nss) nss)]
+    (-> filtered distinct sort)))
+
+(comment
+  (loaded-namespaces)
+  (loaded-namespaces :matching #"rksm")
+  )
 
 (defn classpath-for-ns
   [ns-name]
@@ -131,18 +135,17 @@
               first)
          cp)))
 
-
 (defn source-reader-for-ns
   [ns-name]
-  (let [f (file-for-ns ns-name)]
+  (if-let [f (file-for-ns ns-name)]
     (if (jar? f)
         (jar-reader-for-ns f ns-name)
         (io/reader f))))
 
 (defn source-for-ns
   [ns-name]
-  (with-open [rdr (source-reader-for-ns ns-name)]
-    (slurp rdr)))
+  (if-let [rdr (source-reader-for-ns ns-name)]
+    (with-open [rdr rdr] (when rdr (slurp rdr)))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
