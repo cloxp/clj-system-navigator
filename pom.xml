@@ -16,6 +16,12 @@
         <artifactId>clojure-maven-plugin</artifactId>
         <version>1.3.20</version>
         <extensions>true</extensions>
+        <configuration>
+          <namespaces>
+            <namespace>rksm.system-navigator.*</namespace>
+          </namespaces>
+          <compileDeclaredNamespaceOnly>false</compileDeclaredNamespaceOnly>
+        </configuration>
       </plugin>
 
       <plugin>
@@ -41,6 +47,12 @@
       <version>1.6.0</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.clojure</groupId>
+      <artifactId>data.json</artifactId>
+      <version>0.2.3</version>
+    </dependency>
+
     <!--namespace discovery-->
     <dependency>
       <groupId>org.clojure</groupId>
@@ -59,7 +71,29 @@
       <artifactId>dynapath</artifactId>
       <version>0.2.3</version>
     </dependency>
+
+    <!--java reflection-->
+    <dependency>
+      <groupId>im.chit</groupId>
+      <artifactId>iroh</artifactId>
+      <version>0.1.11</version>
+    </dependency>
+
+    <!--completions-->
+    <dependency>
+      <groupId>compliment</groupId>
+      <artifactId>compliment</artifactId>
+      <version>0.2.0</version>
+    </dependency>
+
+    <!--clojure parser / analyzer-->
+    <!--<dependency>-->
+    <!--  <groupId>org.clojure</groupId>-->
+    <!--  <artifactId>tools.analyzer</artifactId>-->
+    <!--  <version>0.6.4</version>-->
+    <!--</dependency>-->
   </dependencies>
+
 
   <licenses>
     <license>
