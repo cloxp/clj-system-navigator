@@ -74,10 +74,10 @@ or
 </dependency>
 ```
 
-<!-- ## Usage -->
-
-<!-- ```sh -->
-<!-- mvn clojure:nrepl -Dclojure.nrepl.port=7888 -->
-<!-- mvn clojure:test -->
-<!-- fswatch -0 -r . | xargs -0 -I{} mvn clojure:test -->
-<!-- ``` -->
+<!--
+```sh
+mvn clojure:nrepl -Dclojure.nrepl.port=7888
+mvn clojure:test
+fswatch -0 -r . | xargs -0 -I{} mvn clojure:test
+mvn clean clojure:compile clojure:add-source package
+-->
