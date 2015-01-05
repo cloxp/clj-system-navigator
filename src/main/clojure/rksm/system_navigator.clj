@@ -17,7 +17,7 @@
   [cp]
   (dp/add-classpath-url
     (last (classloaders))
-    (-> cp clojure.java.io/file .toURI .toURL)))
+    (-> cp io/file .toURI .toURL)))
 
 (comment
   (in-ns 'rksm.system-navigator)
