@@ -1,7 +1,7 @@
 (ns rksm.system-navigator.ns-test
   (:refer-clojure :exclude [add-classpath])
   (:require [clojure.test :refer :all]
-            [rksm.system-navigator :refer :all]
+            [rksm.system-navigator.namespaces :refer :all]
             [clojure.java.io :as io]))
 
 (deftest system-navigator

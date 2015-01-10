@@ -1,4 +1,4 @@
-(ns rksm.system-navigator.test.completions-test
+(ns rksm.system-navigator.completions-test
   (:refer-clojure :exclude [add-classpath])
   (:require [clojure.test :refer :all]
             [rksm.system-navigator.completions :refer :all]))
@@ -19,7 +19,7 @@
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 (comment
-  (run-tests 'rksm.system-navigator.test.completions-test)
+  (run-tests 'rksm.system-navigator.completions-test)
 
   (filter #(= "equals" (:name %)) (instance-elements "foo"))
   (-> (instance-elements "foo") first key type)
