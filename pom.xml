@@ -4,9 +4,9 @@
   <groupId>org.rksm</groupId>
   <artifactId>system-navigator</artifactId>
   <packaging>jar</packaging>
-  <version>0.1.6-SNAPSHOT</version>
+  <version>0.1.7-SNAPSHOT</version>
   <name>${artifactId}</name>
-  <description>Mapping namespaces and code locations to files and sources using Clojure runtime information.</description>
+  <description>Accessing Clojure runtime meta data. Tooling for cloxp.</description>
   <url>http://maven.apache.org</url>
   <build>
     <plugins>
@@ -19,7 +19,7 @@
 
         <configuration>
           <namespaces>
-            <namespace>rksm.system-navigator.*</namespace>
+            <namespace>rksm.system-navigator</namespace>
             <namespace>clojure.tools.namespace.*</namespace>
           </namespaces>
           <compileDeclaredNamespaceOnly>false</compileDeclaredNamespaceOnly>
@@ -100,6 +100,30 @@
       <version>0.2.0</version>
     </dependency>
 
+    <!--for clojars integration-->
+    <dependency>
+      <groupId>org.clojure</groupId>
+      <artifactId>tools.nrepl</artifactId>
+      <version>0.2.6</version>
+    </dependency>
+    <!--late dependencies-->
+    <dependency>
+      <groupId>com.cemerick</groupId>
+      <artifactId>pomegranate</artifactId>
+      <version>0.3.0</version>
+    </dependency>
+
+    <dependency>
+    	<groupId>org.clojure</groupId>
+    	<artifactId>tools.reader</artifactId>
+    	<version>0.8.13</version>
+    </dependency>
+
+    <dependency>
+        <groupId>clj-http</groupId>
+        <artifactId>clj-http</artifactId>
+        <version>1.0.1</version>
+    </dependency>
   </dependencies>
 
 
