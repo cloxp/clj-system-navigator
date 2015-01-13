@@ -3,7 +3,8 @@
     (:require [clojure.tools.namespace.find :as nf]
               [clojure.java.classpath :as cp]
               [clojure.java.io :as io]
-              [dynapath.util :as dp]))
+              [dynapath.util :as dp]
+              [cemerick.pomegranate]))
 
 (defn classloaders
   []
@@ -26,6 +27,28 @@
   (add-classpath (java.net.URL. "file:///Users/robert/clojure/system-navigator/src/test/clojure/"))
   (add-classpath "/Users/robert/clojure/system-navigator/foo/dummy-2-test.jar")
   )
+
+
+(def common-src-dirs ["src/main/clojure", "src/main/clj", "src/clojure", "src/clj", "src"])
+(def common-test-dirs ["src/test/clojure", "src/test/clj", "src/test", "test/clojure", "test/clj", "test"])
+(def class-dirs ["classes"])
+
+(defn- first-existing-file
+  [paths]
+  (->> paths
+     (map #(str (System/getProperty "user.dir") "/" %))
+     (map io/file)
+     (filter #(.exists %))
+     first))
+
+(defn add-common-project-classpath
+  []
+  (some->> (first-existing-file common-src-dirs)
+    (cemerick.pomegranate/add-classpath))
+  (some->> (first-existing-file common-test-dirs)
+    (cemerick.pomegranate/add-classpath))  
+  (some->> (first-existing-file class-dirs)
+    (cemerick.pomegranate/add-classpath)))
 
 ; -=-=-=-=-=-=-
 ; jar related
@@ -101,9 +124,7 @@
         ns-per-cp (map #(nf/find-namespaces [%]) cp)]
       (some->> (zipmap cp ns-per-cp)
           (filter #(->> % val (some #{ns-name})))
-          first
-          key)))
-
+          last key)))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ; classpath / namespace -> files
