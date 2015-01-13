@@ -1,7 +1,7 @@
-(ns rksm.system-navigator.test.ns-internals-test
+(ns rksm.system-navigator.ns.internals-test
   (:refer-clojure :exclude [add-classpath])
   (:require [clojure.test :refer :all]
-            [rksm.system-navigator.ns-internals :refer :all]
+            [rksm.system-navigator.ns.internals :refer :all]
             [rksm.system-navigator.test.dummy-1]))
 
 (deftest ns-internals
@@ -19,11 +19,11 @@
                      :line 3,
                      :tag nil}]]
       (is (= expected
-             (namespace-info 'rksm.system-navigator.test.dummy-1)))))
-)
+             (namespace-info 'rksm.system-navigator.test.dummy-1))))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 (comment
-  (run-tests 'rksm.system-navigator.test.ns-internals-test)
+  (run-tests 'rksm.system-navigator.ns.internals-test)
+  (run-all-tests)
   )

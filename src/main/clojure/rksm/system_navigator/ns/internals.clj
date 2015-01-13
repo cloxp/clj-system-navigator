@@ -1,4 +1,4 @@
-(ns rksm.system-navigator.ns-internals
+(ns rksm.system-navigator.ns.internals
     (:require [clojure.data.json :as json]
               [clojure.repl :as repl]))
 

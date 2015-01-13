@@ -1,7 +1,7 @@
-(ns rksm.system-navigator.ns-test
+(ns rksm.system-navigator.ns.filemapping-test
   (:refer-clojure :exclude [add-classpath])
   (:require [clojure.test :refer :all]
-            [rksm.system-navigator.namespaces :refer :all]
+            [rksm.system-navigator.ns.filemapping :refer :all]
             [clojure.java.io :as io]))
 
 (deftest system-navigator
@@ -44,23 +44,7 @@
 
 (comment
 
-  (run-tests 'rksm.system-navigator.ns-test)
-
-  (require '[clojure.java.io :as io])
-  (in-ns 'rksm.system-navigator.test)
-  (in-ns 'user)
-
-  (require '[clojure.java.io :as io])
-
-  (slurp (file-for-ns 'rksm.system-navigator.test.dummy-1))
-  (slurp (file-for-ns 'rksm.system-navigator.test.dummy-1))
-  (System/getProperty "user.dir")
-
-  (require 'rksm.system-navigator.test.dummy-2)
-  (compile 'rksm.system-navigator.test.dummy-2)
-
-  (classpath-for-ns 'rksm.system-navigator.test.dummy-1)
-  (source-for-ns 'rksm.system-navigator.test.dummy-2)
+  (run-tests 'rksm.system-navigator.ns.filemapping-test)
   (source-for-ns 'rksm.system-navigator.test.dummy-1)
   (source-for-ns 'clojure.core)
   (file-for-ns 'rksm.system-navigator.test.dummy-2)

@@ -1,4 +1,4 @@
-(ns rksm.system-navigator.namespaces
+(ns rksm.system-navigator.ns.filemapping
     (:refer-clojure :exclude [add-classpath])
     (:require [clojure.tools.namespace.find :as nf]
               [clojure.java.classpath :as cp]
@@ -19,14 +19,6 @@
   (dp/add-classpath-url
     (last (classloaders))
     (-> cp io/file .toURI .toURL)))
-
-(comment
-  (in-ns 'rksm.system-navigator)
-  (dp/all-classpath-urls)
-  (add-classpath (java.net.URL. "file:///Users/robert/clojure/system-navigator/src/main/clojure/"))
-  (add-classpath (java.net.URL. "file:///Users/robert/clojure/system-navigator/src/test/clojure/"))
-  (add-classpath "/Users/robert/clojure/system-navigator/foo/dummy-2-test.jar")
-  )
 
 
 (def common-src-dirs ["src/main/clojure", "src/main/clj", "src/clojure", "src/clj", "src"])
