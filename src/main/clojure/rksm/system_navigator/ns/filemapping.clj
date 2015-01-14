@@ -4,7 +4,8 @@
               [clojure.java.classpath :as cp]
               [clojure.java.io :as io]
               [dynapath.util :as dp]
-              [cemerick.pomegranate]))
+              [cemerick.pomegranate]
+              [rksm.system-navigator.fs-util :as fs]))
 
 (defn classloaders
   []
@@ -137,6 +138,7 @@
                      (re-find #"\.cljx?" (.getName %))))))
 
 (defn file-for-ns
+  "tries to find a filename for the given namespace"
   [ns-name]
   (if-let [cp (classpath-for-ns ns-name)]
     (if (.isDirectory cp)
@@ -146,6 +148,17 @@
                      (.getAbsolutePath %)))
            first)
     cp)))
+
+(defn relative-path-for-ns
+  "relative path of ns in regards to its classpath"
+  [ns]
+  (if-let [fn (file-for-ns ns)]
+    (if (jar? fn)
+      (some-> (java.util.jar.JarFile. fn)
+        (jar-entry-for-ns ns)
+        (.getName))
+      (some-> (classpath-for-ns ns)
+        (fs/path-relative-to fn)))))
 
 (defn source-reader-for-ns
   [ns-name]
