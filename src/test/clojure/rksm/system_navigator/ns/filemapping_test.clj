@@ -38,14 +38,22 @@
               (source-for-ns 'rksm.system-navigator.test.dummy-1))))
     (testing "for jars"
       (is (= "(ns rksm.system-navigator.test.dummy-2\n    (:gen-class))\n\n(def y 24)\n"
-              (source-for-ns 'rksm.system-navigator.test.dummy-2))))))
+              (source-for-ns 'rksm.system-navigator.test.dummy-2)))))
+  
+  (testing "relative namespace paths"
+    (is (= "rksm/system_navigator/test/dummy_1.clj"
+           (relative-path-for-ns 'rksm.system-navigator.test.dummy-1)))
+    (is (= "rksm/system_navigator/test/dummy_2.clj"
+           (relative-path-for-ns 'rksm.system-navigator.test.dummy-2))))
+  )
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 (comment
-
+ (.getName(relative-path-for-ns 'rksm.system-navigator.test.dummy-2))
   (run-tests 'rksm.system-navigator.ns.filemapping-test)
-  (source-for-ns 'rksm.system-navigator.test.dummy-1)
+  (require 'rksm.system-navigator.test.dummy-2)
+  (classpath-for-ns 'rksm.system-navigator.test.dummy-2)
   (source-for-ns 'clojure.core)
   (file-for-ns 'rksm.system-navigator.test.dummy-2)
   (file-for-ns 'rksm.system-navigator.test.dummy-1)
