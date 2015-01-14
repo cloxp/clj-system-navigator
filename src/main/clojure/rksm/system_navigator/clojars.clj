@@ -35,7 +35,23 @@
   []
   (json/json-str (clojars-project-defs)))
 
+(defn get-clojars-json-file
+  []
+  (let [basename "clojars-feed.json"
+        ts (.format (java.text.SimpleDateFormat. "yyyy-MM-dd_HH") (new java.util.Date))]
+   (if-let [workspace (System/getenv "WORKSPACE_LK")]
+     (clojure.java.io/file (str workspace "/" ts "-" basename))
+     (java.io.File/createTempFile ts basename))))
+
+(defn ensure-clojure-feed-in-a-file
+  []
+  (let [f (get-clojars-json-file)]
+    (if-not (every? true? ((juxt #(.exists %) #(> (.length %) 0)) f))
+      (spit f (clojars-project-defs->json)))
+    f))
+
 (comment
+ (.getCanonicalPath (ensure-clojure-feed-in-a-file))
 
  (def x (clojars-project-defs))
  (type x)
