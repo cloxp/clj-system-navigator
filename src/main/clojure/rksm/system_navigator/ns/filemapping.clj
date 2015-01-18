@@ -160,6 +160,10 @@
       (some-> (classpath-for-ns ns)
         (fs/path-relative-to fn)))))
 
+(defn file-name-for-ns
+  [ns]
+  (.getName (file-for-ns ns)))
+
 (defn source-reader-for-ns
   [ns-name]
   (if-let [f (file-for-ns ns-name)]
