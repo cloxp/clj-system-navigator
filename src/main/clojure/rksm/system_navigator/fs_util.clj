@@ -11,9 +11,9 @@
 (defn path-seq
   [file-str]
   (->> File/separator
-       java.util.regex.Pattern/quote
-       re-pattern
-       (string/split file-str)))
+    java.util.regex.Pattern/quote
+    re-pattern
+    (string/split file-str)))
 
 (defn to-path
   ([parts]
@@ -24,17 +24,16 @@
 (defn path-relative-to
   "Generate a string which is the path to input relative to base."
   [^File base input]
-  
   (let [base-path (path-seq (.getCanonicalPath (io/file base)))
         input-path (path-seq (.getCanonicalPath (io/file input)))
         count-base (count base-path)
         common (count (take-while true? (map #(= %1 %2) base-path input-path)))
-        prefix (repeat (- count-base common 1) "..")]
+        prefix (repeat (- count-base common) "..")]
+
+    ; (println base-path input-path common count-base)
     (if (= count-base common)
-      (to-path (drop common input-path) "/") ;; same file
-      ; (last input-path) ;; same file
-    ;   (to-path (concat prefix (drop common input-path)) "/")
       (to-path (drop common input-path) "/")
+      (to-path (concat prefix (drop common input-path)) "/")
       )))
 
 (comment
