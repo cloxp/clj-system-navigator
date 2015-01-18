@@ -9,9 +9,12 @@
   (add-classpath "test-resources/dummy-2-test.jar")
   (require 'rksm.system-navigator.test.dummy-1)
   (require 'rksm.system-navigator.test.dummy-2)
+  (require 'rksm.system-navigator.test.dummy-3)
 
   (testing "find loaded namespaces"
-    (is (= ['rksm.system-navigator.test.dummy-1 'rksm.system-navigator.test.dummy-2]
+    (is (= ['rksm.system-navigator.test.dummy-1
+            'rksm.system-navigator.test.dummy-2 
+            'rksm.system-navigator.test.dummy-3]
            (loaded-namespaces :matching #"rksm.*dummy-[0-9]$"))))
 
   (testing "namespace to classpath mapping"
