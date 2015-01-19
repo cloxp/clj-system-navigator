@@ -38,19 +38,19 @@
 
       </plugin>
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-gpg-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>sign-artifacts</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>sign</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+      <!--<plugin>-->
+      <!--  <groupId>org.apache.maven.plugins</groupId>-->
+      <!--  <artifactId>maven-gpg-plugin</artifactId>-->
+      <!--  <executions>-->
+      <!--    <execution>-->
+      <!--      <id>sign-artifacts</id>-->
+      <!--      <phase>verify</phase>-->
+      <!--      <goals>-->
+      <!--        <goal>sign</goal>-->
+      <!--      </goals>-->
+      <!--    </execution>-->
+      <!--  </executions>-->
+      <!--</plugin>-->
 
     </plugins>
   </build>
@@ -114,15 +114,21 @@
     </dependency>
 
     <dependency>
+        <groupId>clj-http</groupId>
+        <artifactId>clj-http</artifactId>
+        <version>1.0.1</version>
+    </dependency>
+    
+    <!--parsing + source management-->
+    <dependency>
     	<groupId>org.clojure</groupId>
     	<artifactId>tools.reader</artifactId>
     	<version>0.8.13</version>
     </dependency>
-
     <dependency>
-        <groupId>clj-http</groupId>
-        <artifactId>clj-http</artifactId>
-        <version>1.0.1</version>
+      <groupId>org.clojure</groupId>
+      <artifactId>tools.analyzer.jvm</artifactId>
+      <version>0.6.5</version>
     </dependency>
   </dependencies>
 
