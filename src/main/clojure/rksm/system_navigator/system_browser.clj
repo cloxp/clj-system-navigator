@@ -53,72 +53,91 @@
                       (pr-str item)))
            [source source-path file-name])))))
 
+; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 (defn- info-id
   [{ns :ns, name :name}]
   {:ns ns :name name})
 
-(defn- find-info-with-id
-  [id infos]
-  (first (filter #(= id (info-id %)) infos)))
-
-(defn- info-indexed
-  "Creates a data structure that maps ns and intern name to info
-  {{:name z, :ns foo} {:ns foo, :name z, :file \"foo.clj\", :column 3, :line 1, :tag nil}}"
-  [i]
-  (apply merge
-    (map #(hash-map (info-id %) %) i)))
-
-(defn- modified?
-  [new-info old-infos]
-  (let [old-info (find-info-with-id
-                  (info-id new-info)
-                  old-infos)]
-    (not (= (:source old-info) (:source new-info)))))
+(defn- without-all-interns
+  [base-interns without-interns]
+  (filter
+   (fn [info] (not (some #(= (info-id info) (info-id %)) without-interns)))
+   base-interns))
 
 (defn- find-modified-interns
   "At this point we already now that new-ns-info and old-ns-info are in both
   new-src and old-src"
-  [ns-name new-src old-src new-ns-info old-ns-info]
+  [new-with-source old-with-source]
+  (for [a new-with-source b old-with-source
+          :when (and (= (info-id a) (info-id b)) 
+                     (not= (:source a) (:source b)))]
+      (assoc a :prev-source (:source b))))
+
+(defn- find-added-interns
+  [new-ns-info old-ns-info]
+  (let [ids-new (clojure.set/difference
+                 (set (map info-id new-ns-info))
+                 (set (map info-id old-ns-info)))
+        added (for [id ids-new info new-ns-info :when (= id (info-id info))] info)]
+    added))
+
+(defn- find-unchanged-interns
+  [new-src old-interns]
+  (let [sources-new (map :source (i/read-objs new-src))
+        unchanged (for [src sources-new old old-interns
+                        :when (= (clojure.string/trim src)
+                                 (clojure.string/trim (:source old)))]
+                    old)]
+    unchanged))
+
+(defn diff-ns
+  [ns-name new-src old-src new-ns-info old-ns-info changed-vars]
   (let [new-with-source (i/add-source-to-interns-with-reader
                          (java.io.StringReader. new-src)
                          (sort-by :line new-ns-info))
         old-with-source (i/add-source-to-interns-with-reader
                          (java.io.StringReader. old-src)
                          (sort-by :line old-ns-info))
-        grouped (group-by info-id (concat new-with-source old-with-source))]
-    (reset! capture [new-src old-src])
-    ; (reset! capture [ns-name new-with-source old-with-source])
-    (->> grouped
-      (map val)
-      (filter #(not= (first %) (second %)))
-      (map #(apply (fn [a b] (assoc a :prev-source (:source b))) %)))))
-
-(defn diff-ns
-  [ns-name new-src old-src new-ns-info old-ns-info]
-  (let [indexed-new (info-indexed new-ns-info)
-        indexed-old (info-indexed old-ns-info)
-        ids-new (-> indexed-new keys set)
-        ids-old (-> indexed-old keys set)
-        only-in-new (clojure.set/difference ids-new ids-old)
-        in-both (clojure.set/intersection ids-old ids-new)
-        added (map (partial get indexed-new) only-in-new)]
+        added (find-added-interns new-ns-info old-ns-info)
+        unchanged (find-unchanged-interns new-src old-with-source)
+        removed (without-all-interns old-with-source (concat changed-vars unchanged))
+        changed (find-modified-interns
+                 new-with-source
+                 (without-all-interns old-with-source (concat removed unchanged)))]
     {:added added
-     :removed []
-     :changed (find-modified-interns
-               ns-name new-src old-src
-               (map (partial get indexed-new) in-both)
-               (map (partial get indexed-old) in-both))}))
+     :removed removed
+     :changed changed}))
 
-(def capture (atom nil))
+(defn- install-watchers
+  [ns change-store]
+  (doseq [i (vals (ns-interns ns))]
+   (add-watch
+    i ::sys-nav-capture-change
+    (fn [k var old new]
+      (swap! change-store conj
+             {:ns (-> var .ns .name)
+              :name (-> var .sym)})))))
+
+(defn- uninstall-watchers
+  [ns]
+  (doseq [i (vals (ns-interns ns))]
+   (remove-watch i ::sys-nav-capture-change)))
+
+; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 (defn change-ns-in-runtime!
   [ns-name new-source old-src]
-  (let [old-ns-info (i/namespace-info ns-name)]
-    (load-ns-source! new-source
-                     (fm/relative-path-for-ns ns-name)
-                     (fm/file-name-for-ns ns-name))
+  (let [old-ns-info (i/namespace-info ns-name)
+        changed-vars (atom [])]
+    (install-watchers ns-name changed-vars)
+    (try
+      (load-ns-source! new-source
+                       (fm/relative-path-for-ns ns-name)
+                       (fm/file-name-for-ns ns-name))
+      (finally (uninstall-watchers ns-name)))
     (let [new-ns-info (i/namespace-info ns-name)
-          diff (diff-ns ns-name new-source old-src new-ns-info old-ns-info)]
+          diff (diff-ns ns-name new-source old-src new-ns-info old-ns-info @changed-vars)]
       (->> (:removed diff)
         (doseq [rem (:removed diff)]
           (ns-unmap (find-ns (:ns rem)) (:name rem))))
