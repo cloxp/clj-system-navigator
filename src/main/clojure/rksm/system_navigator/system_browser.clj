@@ -6,7 +6,12 @@
     (:require [clojure.set :as set])
     )
 
+; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+; changing defs
+; -=-=-=-=-=-=-=-
+
 (defn- eval-and-update-meta!
+  "Eval specifically for defs, used by change-def!"
   [sym src]
   (let [namespace (-> sym .getNamespace symbol find-ns)
         ref (find-var sym)
@@ -16,9 +21,10 @@
              (alter-meta! ref merge old-meta))))
 
 (defn updated-source
-  [sym new-src-for-def old-src-for-def]
-  (let [ns-sym (-> (.getNamespace sym) symbol find-ns ns-name)
-        lines (-> (fm/file-for-ns ns-sym) slurp s/split-lines)
+  "Takes the new source for a def and produces a new version of the ns source,
+  with the new def code embedded"
+  [sym new-src-for-def old-src-for-def file-src]
+  (let [lines (s/split-lines file-src)
         line (-> (find-var sym) meta :line dec)
         before-lines (take line lines)
         after-lines (-> old-src-for-def s/split-lines count (drop (drop line lines)))]
@@ -26,14 +32,16 @@
 
 (defn- update-source-file!
   [sym src old-src]
-  (let [new-file-src (updated-source sym src old-src)
-        ns-sym (-> (.getNamespace sym) symbol find-ns ns-name)]
-    (-> (fm/file-for-ns ns-sym) (spit new-file-src))))
+  (let [ns-sym (-> (.getNamespace sym) symbol find-ns ns-name)
+        file (fm/file-for-ns ns-sym)
+        old-file-src (slurp file)
+        new-file-src (updated-source sym src old-src old-file-src)]
+    (spit file new-file-src)))
 
 (defn change-def!
   "1. eval new code
   2. record a change in a changeset
-  3. of `write-to-file`, update source in file-system"
+  3. if `write-to-file`, update source in file-system"
   [sym new-source & [write-to-file]]
   (eval-and-update-meta! sym new-source)
   (let [old-src (i/file-source-for-sym sym)
@@ -41,19 +49,10 @@
     (if (and old-src write-to-file)
       (update-source-file! sym new-source old-src))))
 
-(defn load-ns-source!
-  [source source-path file-name]
-  (eval 
-   (read-string 
-    (apply format
-      "(clojure.lang.Compiler/load (java.io.StringReader. %s) %s %s)"
-      (map (fn [item]
-             (binding [*print-length* nil
-                       *print-level* nil]
-                      (pr-str item)))
-           [source source-path file-name])))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+; nitty-gritty details for how to "diff" changes
+; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 (defn- info-id
   [{ns :ns, name :name}]
@@ -92,6 +91,10 @@
     unchanged))
 
 (defn diff-ns
+  "Figures out what has changed when the source of a namespace changes. Via def
+  watchers, source comparison, and ns-intern access we figure out the removed,
+  added, and changed ns interns (defs). This is used to construct changes /
+  changesets."
   [ns-name new-src old-src new-ns-info old-ns-info changed-vars]
   (let [new-with-source (i/add-source-to-interns-with-reader
                          (java.io.StringReader. new-src)
@@ -124,7 +127,23 @@
   (doseq [i (vals (ns-interns ns))]
    (remove-watch i ::sys-nav-capture-change)))
 
+
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+; high level ns change funcs
+; -=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+(defn load-ns-source!
+  "Load-file equivalent"
+  [source source-path file-name]
+  (eval 
+   (read-string 
+    (apply format
+      "(clojure.lang.Compiler/load (java.io.StringReader. %s) %s %s)"
+      (map (fn [item]
+             (binding [*print-length* nil
+                       *print-level* nil]
+                      (pr-str item)))
+           [source source-path file-name])))))
 
 (defn change-ns-in-runtime!
   [ns-name new-source old-src]
