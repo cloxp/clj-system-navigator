@@ -3,7 +3,7 @@
    [clj-http.client :as http]
    [clojure.tools.reader.edn :as edn]
    [clojure.tools.reader.reader-types :as t]
-   [rksm.system-navigator.json :as json])
+   [clojure.data.json :as json])
   (:import
    [java.util.zip.GZIPInputStream]))
 
@@ -33,7 +33,7 @@
 
 (defn clojars-project-defs->json
   []
-  (json/json-str (clojars-project-defs)))
+  (json/write-str (clojars-project-defs)))
 
 (defn get-clojars-json-file
   []
