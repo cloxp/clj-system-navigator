@@ -11,7 +11,7 @@
            (clojure.lang RT)))
 
 
-(declare intern-info)
+(declare intern-info symbol-info)
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ; reading stuff
@@ -148,10 +148,13 @@
   When files get reloaded / defs redefined this can mean that the code being
   retrieved is outdated"
   [sym]
-  (if-let [changed (last (cs/get-changes sym))]
-    (:source changed)
-    (try (clojure.repl/source-fn sym)
-      (catch Exception e ""))))
+  (or (some-> (cs/get-changes sym) last :source)
+      (try (clojure.repl/source-fn sym)
+        (catch Exception e nil))
+      (let [ns (-> sym .getNamespace symbol)]
+        (-> (add-source-to-interns
+             ns [(symbol-info ns (-> sym name symbol))])
+          first :source))))
 
 (defn add-source-to-interns-from-repl
   "This method uses the RT/baseloader to lookup the files belonging to symbols.

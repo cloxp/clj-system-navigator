@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [add-classpath])
   (:require [clojure.test :refer :all]
             [rksm.system-navigator.ns.internals :refer :all]
-            [rksm.system-navigator.test.dummy-1]))
+            (rksm.system-navigator.test dummy-1 dummy-3)))
 
 (deftest reading
 
@@ -20,19 +20,17 @@
 
   (testing "parse source"
     (let [src "(ns rksm.system-navigator.test.dummy-3)\n  (defmacro b [] `~23)\n(+ 2 3)\n(defn foo [] `~23)\n"
-          expected [{:locals {}, :ns 'rksm.system-navigator.test.dummy-3,
-                     :name 'foo, :file "NO_SOURCE_PATH",
-                     :form '(defn foo [] 23), :source "(defn foo [] `~23)",
-                     :end-column 19, :column 1, :line 4, :end-line 4,
-                     :context :ctx.invoke/param}
-                    {:locals {}, :ns 'rksm.system-navigator.test.dummy-3,
-                     :name 'b, :file "NO_SOURCE_PATH",
-                     :source "(defmacro b [] `~23)",
-                     :form '(defmacro b [] 23)
-                     :end-column 23, :column 3, :line 2, :end-line 2,
-                     :context :ctx/statement}]]
+          expected [{:ns 'rksm.system-navigator.test.dummy-3,
+                     :name 'foo,
+                     :source "(defn foo [] `~23)",
+                     :line 4}
+                    {:ns 'rksm.system-navigator.test.dummy-3,
+                     :name 'b,
+                     :source "(defmacro b [] `~23)"
+                     :line 2}]]
       (is (= expected
-             (read-and-parse src 'rksm.system-navigator.test.dummy-3))))))
+             (map #(select-keys % [:name :ns :source :line])
+                  (read-and-parse src 'rksm.system-navigator.test.dummy-3)))))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
