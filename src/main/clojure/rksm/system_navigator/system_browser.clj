@@ -169,7 +169,7 @@
   [ns-name new-source & [write-to-file]]
   (if-let [old-src (fm/source-for-ns ns-name)]    
     (let [diff (change-ns-in-runtime! ns-name new-source old-src)
-          change (cs/record-change-ns! ns-name new-source old-src)]
+          change (cs/record-change-ns! ns-name new-source old-src diff)]
       (if write-to-file
         (spit (fm/file-for-ns ns-name) new-source)))
     (throw (Exception. (str "Cannot retrieve current source for " ns-name))))

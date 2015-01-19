@@ -99,6 +99,7 @@
 "]
 
      (change-ns! 'rksm.system-navigator.test.dummy-3 new-src true)
+    ; (change-ns! 'rksm.system-navigator.test.dummy-3 new-src false)
 
      (testing "evaluation"
        (is (= 24
@@ -106,10 +107,33 @@
        (is (= 67
               (last (eval '(rksm.system-navigator.test.dummy-3/test-func 1))))))
 
-     (is (= new-src (slurp test-file-2))
-         "written source")
+    (testing "write to file"
+      (is (= new-src (slurp test-file-2))
+          "written source"))
 
-     (is (= 1 (count (cs/get-changes 'rksm.system-navigator.test.dummy-3))))
+    
+    (is (= 1 (count (cs/get-changes 'rksm.system-navigator.test.dummy-3))))
+
+    (testing "recorded change, ns part"
+     (let [change (first (cs/get-changes 'rksm.system-navigator.test.dummy-3))
+           ns-part (select-keys change [:sym :source :prev-source])]
+       (is (= {:sym 'rksm.system-navigator.test.dummy-3
+               :source new-src, :prev-source orig-source-2}
+              ns-part))))
+    
+    (testing "recorded change, diff part"
+     (let [change (first (cs/get-changes 'rksm.system-navigator.test.dummy-3))
+           changes (:changes change)
+           expected {:added '()
+                     :removed '({:source "(def x 23)", :ns rksm.system-navigator.test.dummy-3
+                                 :name dummy-atom, :file "rksm/system_navigator/test/dummy_3.clj"
+                                 :column 1, :line 3, :tag nil})
+                     :changed '({:ns rksm.system-navigator.test.dummy-3, :name test-func, 
+                                 :file "rksm/system_navigator/test/dummy_3.clj"
+                                 :prev-source "(defn test-func\n  [y]\n  (swap! dummy-atom conj (+ x y)))"
+                                 :source "(defn test-func\n[y]\n(swap! dummy-atom conj (+ x y 42)))"
+                                 :column 1, :line 7, :tag nil, :arglists ([y])})}]
+       (is (= expected changes))))
 
      (let [expected [{:tag nil,
                       :ns 'rksm.system-navigator.test.dummy-3,

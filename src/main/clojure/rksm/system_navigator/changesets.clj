@@ -9,10 +9,11 @@
           :prev-source prev-source}))
 
 (defn record-change-ns!
-  [ns-name source & [prev-source]]
+  [ns-name source & [prev-source changes]]
   (swap! current-changeset conj
          {:sym ns-name :source source
-          :prev-source prev-source}))
+          :prev-source prev-source
+          :changes changes}))
 
 (defn get-changes
   [sym]
