@@ -1,6 +1,6 @@
 (ns rksm.system-navigator.changesets)
 
-(def current-changeset (atom []))
+(def current-changeset  (atom []))
 
 (defn record-change!
   [sym source & [prev-source]]
@@ -11,13 +11,18 @@
 (defn record-change-ns!
   [ns-name source & [prev-source changes]]
   (swap! current-changeset conj
-         {:sym ns-name :source source
-          :prev-source prev-source
+         {:sym ns-name
+        ;   :source source
+        ;   :prev-source prev-source
           :changes changes}))
 
 (defn get-changes
   [sym]
   (filter #(= (:sym %) sym) @current-changeset))
+
+(defn source-for-symbol
+  [sym]
+  (some-> (get-changes sym) last :source))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 

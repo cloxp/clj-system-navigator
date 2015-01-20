@@ -2,9 +2,7 @@
   (:refer-clojure :exclude [add-classpath])
   (:require [clojure.test :refer :all]
             [rksm.system-navigator.changesets :refer :all]
-            [rksm.system-navigator.ns.internals :refer (source-for-symbol)]
             [rksm.system-navigator.test.dummy-1]))
-
 
 (defn source-state-fixture [test]
   (reset! current-changeset [])
