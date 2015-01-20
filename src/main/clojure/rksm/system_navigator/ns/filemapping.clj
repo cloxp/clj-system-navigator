@@ -139,20 +139,22 @@
 
 (defn file-for-ns
   "tries to find a filename for the given namespace"
-  [ns-name]
-  (if-let [cp (classpath-for-ns ns-name)]
-    (if (.isDirectory cp)
-      (->> (clj-files-in-dir cp)
-           (filter #(re-find
-                     (re-pattern (str (ns-name->rel-path ns-name) "$"))
-                     (.getAbsolutePath %)))
-           first)
-    cp)))
+  [ns-name & [file-name]]
+  (if file-name
+    (io/file file-name)
+    (if-let [cp (classpath-for-ns ns-name)]
+      (if (.isDirectory cp)
+        (->> (clj-files-in-dir cp)
+          (filter #(re-find
+                    (re-pattern (str (ns-name->rel-path ns-name) "$"))
+                    (.getAbsolutePath %)))
+          first)
+        cp))))
 
 (defn relative-path-for-ns
   "relative path of ns in regards to its classpath"
-  [ns]
-  (if-let [fn (file-for-ns ns)]
+  [ns & [file-name]]
+  (if-let [fn (file-for-ns ns file-name)]
     (if (jar? fn)
       (some-> (java.util.jar.JarFile. fn)
         (jar-entry-for-ns ns)
@@ -162,18 +164,18 @@
 
 (defn file-name-for-ns
   [ns]
-  (.getName (file-for-ns ns)))
+  (.getCanonicalPath (file-for-ns ns)))
 
 (defn source-reader-for-ns
-  [ns-name]
-  (if-let [f (file-for-ns ns-name)]
+  [ns-name & [file-name]]
+  (if-let [f (file-for-ns ns-name file-name)]
     (if (jar? f)
         (jar-reader-for-ns f ns-name)
         (io/reader f))))
 
 (defn source-for-ns
-  [ns-name]
-  (if-let [rdr (source-reader-for-ns ns-name)]
+  [ns-name & [file-name]]
+  (if-let [rdr (source-reader-for-ns ns-name file-name)]
     (with-open [rdr rdr] (when rdr (slurp rdr)))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -182,4 +184,6 @@
   (classpath)
   (loaded-namespaces)
   (file-for-ns 'rksm.system-navigator)
+  (file-for-ns 'rksm.system-navigator "/Users/robert/clojure/system-navigator/src/main/clojure/rksm/system_navigator.clj")
+  (relative-path-for-ns 'rksm.system-navigator "/Users/robert/clojure/system-navigator/src/main/clojure/rksm/system_navigator.clj")
   )

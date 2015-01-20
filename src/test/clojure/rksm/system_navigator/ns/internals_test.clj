@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [add-classpath])
   (:require [clojure.test :refer :all]
             [rksm.system-navigator.ns.internals :refer :all]
+            [rksm.system-navigator.ns.filemapping :refer (file-name-for-ns)]
             (rksm.system-navigator.test dummy-1 dummy-3)))
 
 (deftest reading
@@ -70,12 +71,14 @@
                (add-source-to-interns-with-reader source entities))))))
 
   (testing "namespace report"
-    (let [expected [{:ns 'rksm.system-navigator.test.dummy-1,
-                     :name 'x,
-                     :file "rksm/system_navigator/test/dummy_1.clj",
-                     :column 1,
-                     :line 3,
-                     :tag nil}]]
+    (let [file (file-name-for-ns 'rksm.system-navigator.test.dummy-1)
+          expected {:file file
+                    :interns [{:ns 'rksm.system-navigator.test.dummy-1,
+                               :name 'x,
+                               :file "rksm/system_navigator/test/dummy_1.clj",
+                               :column 1,
+                               :line 3,
+                               :tag nil}]}]
       (is (= expected
              (namespace-info 'rksm.system-navigator.test.dummy-1))))))
 
@@ -83,23 +86,4 @@
 
 (comment
   (run-tests 'rksm.system-navigator.ns.internals-test)
-  (run-all-tests)
-  
-  (ns-interns 'rksm.system-navigator.test.dummy-1)
-  (namespace-info 'rksm.system-navigator.test.dummy-1)
-  
-  (rksm.system-navigator.ns.filemapping/add-classpath "test-resources/dummy-2-test.jar")
-  (require 'rksm.system-navigator.test.dummy-1)
-  (require 'rksm.system-navigator.test.dummy-2)
-
-  (namespace-info 'rksm.system-navigator.ns.internals)
-  (require '[clj-stacktrace.repl :refer (pst)])
-  (require '[rksm:refer (pst)])
-  source-retrieval
-  pst
-  (source-retrieval 'rksm.system-navigator.test.dummy-1/x)
-  (source-for-symbol 'rksm.system-navigator.test.dummy-1/x)
-  (meta #'rksm.system-navigator.test.dummy-1/x)
-  (pst)
-  
-  )
+)

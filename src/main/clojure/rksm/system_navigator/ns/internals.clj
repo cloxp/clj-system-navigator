@@ -4,7 +4,7 @@
             [clojure.tools.reader :as tr]
             [clojure.tools.reader.reader-types :as trt]
             [clojure.string :as s]
-            [rksm.system-navigator.ns.filemapping :refer (file-for-ns source-reader-for-ns)]
+            [rksm.system-navigator.ns.filemapping :refer (ns-name->rel-path file-name-for-ns source-reader-for-ns)]
             [rksm.system-navigator.changesets :as cs]
             (clojure.tools.analyzer jvm ast))
   (:import (java.io LineNumberReader InputStreamReader PushbackReader)
@@ -130,31 +130,32 @@
   NOTE: If there are multiple versions a lib on the classpath than it is
   possible that this function will retrieve code that i not actually in the
   system! (and the system meta data will clash with the actual file contents)"
-  [ns interns]
-  (if-let [rdr (source-reader-for-ns ns)]
+  [ns interns & [ns-file-path]]
+  (if-let [rdr (source-reader-for-ns ns ns-file-path)]
     (with-open [rdr rdr]
       (add-source-to-interns-with-reader rdr interns))
     interns))
 
 (defn file-source-for-sym
-  [sym]
+  [sym & [file-path]]
   (let [ns-sym (-> (.getNamespace sym) symbol find-ns ns-name)
         interns [(intern-info (meta (find-var sym)))]
-        with-source (add-source-to-interns ns-sym interns)]
+        with-source (add-source-to-interns ns-sym interns file-path)]
     (:source (first with-source))))
 
 (defn source-for-symbol
   "This method uses the RT/baseloader to lookup the files belonging to symbols.
   When files get reloaded / defs redefined this can mean that the code being
   retrieved is outdated"
-  [sym]
-  (or (some-> (cs/get-changes sym) last :source)
-      (try (clojure.repl/source-fn sym)
-        (catch Exception e nil))
+  [sym & [ns-file-path]]
+  (or 
+   ; (some-> (cs/get-changes sym) last :source)
       (let [ns (-> sym .getNamespace symbol)]
         (-> (add-source-to-interns
-             ns [(symbol-info ns (-> sym name symbol))])
-          first :source))))
+             ns [(symbol-info ns (-> sym name symbol))] ns-file-path)
+          first :source)) 
+      (try (clojure.repl/source-fn sym)
+        (catch Exception e nil))))
 
 (defn add-source-to-interns-from-repl
   "This method uses the RT/baseloader to lookup the files belonging to symbols.
@@ -184,48 +185,51 @@
              {:ns ns-name :tag tag}
              (protocol-info intern-meta)))))
 
-(defn namespace-info
-  [ns]
-  (->> (ns-interns ns)
-    (map #(-> % val meta intern-info))
-    (sort-by :line)
-    ; (add-source-to-interns ns)
-    ; (add-source-to-interns-from-repl ns)
-    (filter boolean)))
-
-(comment
- (time (namespace-info 'clj-tuple))
- )
-
 (defn symbol-info
-  [ns sym]
+  [ns sym & [file-path]]
   (-> (ns-resolve ns sym)
     meta
     intern-info))
+
+(defn namespace-info
+  [ns & [file-name]]
+  {:file (or file-name (file-name-for-ns ns))
+   :interns  (->> (ns-interns ns)
+               (map #(-> % val meta intern-info))
+               (sort-by :line)
+               ; (add-source-to-interns ns)
+               ; (add-source-to-interns-from-repl ns)
+               (filter boolean))})
 
 (defn stringify [obj]
   (cond
     (var? obj) (:name (meta obj))
     (or (string? obj) (symbol? obj) (keyword? obj)) (name obj)
+    (or (seq? obj)) (vec obj)
+    (or (map? obj)) obj
+    ; it seems that the value-fn in json/write is not called for every value
+    ; individually, only for map / collection like things... so to filter out
+    ; objects that couldn't be stringified to start with we have this map stmt in
+    ; here...
+    (coll? obj) (map #(if (some boolean ((juxt map? coll?) %)) % (stringify %)) obj)
     :else (str obj)))
 
 (defn symbol-info->json
   [ns sym]
   (json/write-str (symbol-info ns sym)
-                  :key-fn stringify
-                  :value-fn (fn [_ val] (stringify val))))
+                  :key-fn #(if (keyword? %) (name %) (str %))
+                  :value-fn (fn [_ x] (stringify x))))
 
-(defn namespace-info->json [ns]
-  (json/write-str (namespace-info ns)
-      :key-fn stringify
-      :value-fn (fn [_ val] (stringify val))))
+(defn namespace-info->json [ns & [file-path]]
+  (json/write-str (namespace-info ns file-path)
+                  :key-fn #(if (keyword? %) (name %) (str %))
+                  :value-fn (fn [_ x] (stringify x))))
+
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 (comment
   (source-for-symbol 'rksm.system-navigator.test.dummy-1/x)
   (rksm.system-navigator.ns.internals/namespace-info->json 'rksm.system-navigator.search)
-  (namespace-info 'rksm.system-navigator.search)
   (namespace-info 'rksm.system-navigator.test.dummy-1)
-  (namespace-info->json 'rksm.system-navigator.test.dummy-1)
   )
