@@ -69,7 +69,7 @@
   new-src and old-src"
   [new-with-source old-with-source]
   (for [a new-with-source b old-with-source
-          :when (and (= (info-id a) (info-id b)) 
+          :when (and (= (info-id a) (info-id b))
                      (not= (:source a) (:source b)))]
       (assoc a :prev-source (:source b))))
 
@@ -134,28 +134,30 @@
 
 (defn load-ns-source!
   "Load-file equivalent"
-  [source source-path file-name]
-  (eval 
-   (read-string 
-    (apply format
-      "(clojure.lang.Compiler/load (java.io.StringReader. %s) %s %s)"
-      (map (fn [item]
-             (binding [*print-length* nil
-                       *print-level* nil]
-                      (pr-str item)))
-           [source source-path file-name])))))
+  [source source-path]
+  (let [file-name (-> source-path
+                    (s/split (re-pattern (java.io.File/separator)))
+                    last)]
+    (eval
+     (read-string
+      (apply format
+        "(clojure.lang.Compiler/load (java.io.StringReader. %s) %s %s)"
+        (map (fn [item]
+               (binding [*print-length* nil
+                         *print-level* nil]
+                        (pr-str item)))
+             [source source-path file-name]))))))
 
 (defn change-ns-in-runtime!
-  [ns-name new-source old-src]
-  (let [old-ns-info (i/namespace-info ns-name)
-        changed-vars (atom [])]
+  [ns-name new-source old-src & [file-name]]
+  (let [old-ns-info (:interns (i/namespace-info ns-name file-name))
+        changed-vars (atom [])
+        rel-path (fm/ns-name->rel-path ns-name)]
     (install-watchers ns-name changed-vars)
     (try
-      (load-ns-source! new-source
-                       (fm/relative-path-for-ns ns-name)
-                       (fm/file-name-for-ns ns-name))
+      (load-ns-source! new-source rel-path)
       (finally (uninstall-watchers ns-name)))
-    (let [new-ns-info (i/namespace-info ns-name)
+    (let [new-ns-info (:interns (i/namespace-info ns-name file-name))
           diff (diff-ns ns-name new-source old-src new-ns-info old-ns-info @changed-vars)]
       (->> (:removed diff)
         (doseq [rem (:removed diff)]
@@ -166,12 +168,12 @@
   "1. eval new code
   2. record a change in a changeset
   3. of `write-to-file`, update source in file-system"
-  [ns-name new-source & [write-to-file]]
-  (if-let [old-src (fm/source-for-ns ns-name)]    
-    (let [diff (change-ns-in-runtime! ns-name new-source old-src)
+  [ns-name new-source & [write-to-file file]]
+  (if-let [old-src (fm/source-for-ns ns-name file)]
+    (let [diff (change-ns-in-runtime! ns-name new-source old-src file)
           change (cs/record-change-ns! ns-name new-source old-src diff)]
       (if write-to-file
-        (spit (fm/file-for-ns ns-name) new-source)))
+        (spit (fm/file-for-ns ns-name file) new-source)))
     (throw (Exception. (str "Cannot retrieve current source for " ns-name))))
   )
 

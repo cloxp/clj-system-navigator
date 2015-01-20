@@ -48,12 +48,14 @@
          (count (cs/get-changes 'rksm.system-navigator.test.dummy-1/x)))
       "change set recording")
 
-  (let [expected [{:ns 'rksm.system-navigator.test.dummy-1,
-                   :name 'x,
-                   :file "rksm/system_navigator/test/dummy_1.clj",
-                   :column 1,
-                   :line 3,
-                   :tag nil}]]
+  (let [expected {:file (fm/file-name-for-ns 'rksm.system-navigator.test.dummy-1)
+                  :interns
+                  [{:ns 'rksm.system-navigator.test.dummy-1,
+                    :name 'x,
+                    :file "rksm/system_navigator/test/dummy_1.clj",
+                    :column 1,
+                    :line 3,
+                    :tag nil}]}]
     (is (= expected
            (namespace-info 'rksm.system-navigator.test.dummy-1))
         "intern-info")))
@@ -116,24 +118,29 @@
 
     (testing "recorded change, ns part"
      (let [change (first (cs/get-changes 'rksm.system-navigator.test.dummy-3))
-           ns-part (select-keys change [:sym :source :prev-source])]
-       (is (= {:sym 'rksm.system-navigator.test.dummy-3
-               :source new-src, :prev-source orig-source-2}
+           ns-part (select-keys change [:sym])]
+       (is (= {:sym 'rksm.system-navigator.test.dummy-3}
               ns-part))))
     
     (testing "recorded change, diff part"
-     (let [change (first (cs/get-changes 'rksm.system-navigator.test.dummy-3))
-           changes (:changes change)
-           expected {:added '()
-                     :removed '({:source "(def x 23)", :ns rksm.system-navigator.test.dummy-3
-                                 :name dummy-atom, :file "rksm/system_navigator/test/dummy_3.clj"
-                                 :column 1, :line 3, :tag nil})
-                     :changed '({:ns rksm.system-navigator.test.dummy-3, :name test-func, 
-                                 :file "rksm/system_navigator/test/dummy_3.clj"
-                                 :prev-source "(defn test-func\n  [y]\n  (swap! dummy-atom conj (+ x y)))"
-                                 :source "(defn test-func\n[y]\n(swap! dummy-atom conj (+ x y 42)))"
-                                 :column 1, :line 7, :tag nil, :arglists ([y])})}]
-       (is (= expected changes))))
+      (let [change (first (cs/get-changes 'rksm.system-navigator.test.dummy-3))
+            expected {:added [],
+                      :removed
+                      '({:ns rksm.system-navigator.test.dummy-3,:name foo,
+                         :file "rksm/system_navigator/test/dummy_3.clj",
+                         :source "(defmacro foo\n  [x & body]\n  `(foo ~x ~@body))",
+                         :column 1,:line 11,:macro true,:tag nil,:arglists ([x & body])}),
+                      :changed
+                      '({:ns rksm.system-navigator.test.dummy-3,:name x,
+                         :file "rksm/system_navigator/test/dummy_3.clj",
+                         :prev-source "(def x 23)",:source "(def x 24)",
+                         :column 1,:line 5,:tag nil}
+                        {:ns rksm.system-navigator.test.dummy-3,:name test-func,
+                         :file "rksm/system_navigator/test/dummy_3.clj",
+                         :prev-source "(defn test-func\n  [y]\n  (swap! dummy-atom conj (+ x y)))",
+                         :source"(defn test-func\n[y]\n(swap! dummy-atom conj (+ x y 42)))",
+                         :column 1,:line 7,:tag nil,:arglists ([y])})}]
+        (is (= expected (:changes change)))))
 
      (let [expected [{:tag nil,
                       :ns 'rksm.system-navigator.test.dummy-3,
@@ -155,8 +162,26 @@
                       :tag nil,
                       :arglists '([y])}]]
        (is (= expected
-              (namespace-info 'rksm.system-navigator.test.dummy-3)))
+              (:interns (namespace-info 'rksm.system-navigator.test.dummy-3))))
        )))
+
+(deftest modify-ns-with-known-file
+
+  (let [new-src "(ns rksm.system-navigator.test.dummy-3) (def x 25)"]
+    
+     (change-ns! 'rksm.system-navigator.test.dummy-3 new-src true
+                 (fm/file-name-for-ns 'rksm.system-navigator.test.dummy-3))
+    ; (change-ns! 'rksm.system-navigator.test.dummy-3 new-src false)
+
+     (testing "evaluation"
+       (is (= 25
+              (eval 'rksm.system-navigator.test.dummy-3/x))))
+    
+    (testing "recorded change, diff part"
+      (let [changes (-> (cs/get-changes 'rksm.system-navigator.test.dummy-3) first :changes)
+            counts (into {} (for [[k v] changes] [k (count v)]))
+            expected {:added 0, :removed 3, :changed 1}]
+        (is (= expected counts))))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
