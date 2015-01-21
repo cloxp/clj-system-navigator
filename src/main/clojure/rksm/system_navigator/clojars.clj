@@ -26,10 +26,10 @@
 (defn clojars-project-defs
   ([]
   (let [rdr (t/string-push-back-reader (clojars-uncompressed-content))]
-     (loop [read []]
-       (if-let [o (edn/read {:eof nil} rdr)]
-         (recur (cons o read))
-         read)))))
+    (doall (loop [read []]
+             (if-let [o (edn/read {:eof nil} rdr)]
+               (recur (cons o read))
+               read))))))
 
 (defn clojars-project-defs->json
   []
@@ -39,9 +39,10 @@
   []
   (let [basename "clojars-feed.json"
         ts (.format (java.text.SimpleDateFormat. "yyyy-MM-dd_HH") (new java.util.Date))]
-   (if-let [workspace (System/getenv "WORKSPACE_LK")]
-     (clojure.java.io/file (str workspace "/" ts "-" basename))
-     (java.io.File/createTempFile ts basename))))
+    (if-let [workspace (or (System/getenv "WORKSPACE_LK")
+                           (System/getProperty "user.dir"))]
+      (clojure.java.io/file (str workspace "/" ts "-" basename))
+      (java.io.File/createTempFile ts basename))))
 
 (defn ensure-clojure-feed-in-a-file
   []
@@ -50,12 +51,18 @@
       (spit f (clojars-project-defs->json)))
     f))
 
+; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 (comment
  (.getCanonicalPath (ensure-clojure-feed-in-a-file))
-
+ (ensure-clojure-feed-in-a-file)
  (def x (clojars-project-defs))
  (type x)
- (take 10 x)
+ (-> (take 10 x) json/write-str)
+ 
+ (-> (take-last 10 x) json/write-str)
+ (-> (take 10 x) (json/write (clojure.java.io/writer (get-clojars-json-file))))
+ (json/write (clojars-project-defs) (clojure.java.io/writer (get-clojars-json-file)))
  
  (require '[clojure.string :refer [join]])
  (->> (clojars-uncompressed-content) (take 100) join)
