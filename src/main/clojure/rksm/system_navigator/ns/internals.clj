@@ -193,7 +193,7 @@
 
 (defn namespace-info
   [ns & [file-name]]
-  {:file (or file-name (file-name-for-ns ns))
+  {:file file-name
    :interns  (->> (ns-interns ns)
                (map #(-> % val meta intern-info))
                (sort-by :line)
