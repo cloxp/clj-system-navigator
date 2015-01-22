@@ -196,6 +196,7 @@
   {:file file-name
    :interns  (->> (ns-interns ns)
                (map #(-> % val meta intern-info))
+               (filter #(not= (:file %) "NO_SOURCE_PATH"))
                (sort-by :line)
                ; (add-source-to-interns ns)
                ; (add-source-to-interns-from-repl ns)
