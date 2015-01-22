@@ -150,10 +150,13 @@
 
 (defn change-ns-in-runtime!
   [ns-name new-source old-src & [file-name]]
-  (let [old-ns-info (:interns (i/namespace-info ns-name file-name))
+  (let [old-ns-info (if (find-ns ns-name) 
+                      (:interns (i/namespace-info ns-name file-name))
+                      [])
         changed-vars (atom [])
         rel-path (fm/ns-name->rel-path ns-name)]
-    (install-watchers ns-name changed-vars)
+    (if (find-ns ns-name) 
+      (install-watchers ns-name changed-vars))
     (try
       (load-ns-source! new-source rel-path)
       (finally (uninstall-watchers ns-name)))
