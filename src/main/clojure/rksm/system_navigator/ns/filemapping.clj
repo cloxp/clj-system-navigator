@@ -29,7 +29,7 @@
 (defn- first-existing-file
   [paths]
   (->> paths
-     (map #(str (System/getProperty "user.dir") "/" %))
+     (map #(str (System/getProperty "user.dir") java.io.File/separator %))
      (map io/file)
      (filter #(.exists %))
      first))
