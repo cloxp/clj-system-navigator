@@ -18,7 +18,7 @@
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 (deftest parsing
-
+  
   (testing "parse source"
     (let [src "(ns rksm.system-navigator.test.dummy-3)\n  (defmacro b [] `~23)\n(+ 2 3)\n(defn foo [] `~23)\n"
           expected [{:ns 'rksm.system-navigator.test.dummy-3,
@@ -35,8 +35,8 @@
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-(deftest ns-internals
-  
+
+(deftest source-retrieval
   (testing "get source for intern"
     (is (= "(def x 23)"
            (source-for-symbol 'rksm.system-navigator.test.dummy-1/x))))
@@ -68,17 +68,31 @@
       (is (= [{:source "(def y 24)" :column 1,:line 3} {:source "" :column 1,:line 6}]
              (let [entities [{:column 1,:line 3} {:column 1,:line 6}]
                    source (java.io.StringReader. "(def x 23)\n\n(def y 24)")]
-               (add-source-to-interns-with-reader source entities))))))
+               (add-source-to-interns-with-reader source entities)))))))
 
+(deftest ns-internals
+  
   (testing "namespace report"
-    (let [file (file-name-for-ns 'rksm.system-navigator.test.dummy-1)
-          expected {:file file
+    (let [expected {:file nil
                     :interns [{:ns 'rksm.system-navigator.test.dummy-1,
                                :name 'x,
                                :file "rksm/system_navigator/test/dummy_1.clj",
                                :column 1,
                                :line 3,
                                :tag nil}]}]
+      (is (= expected
+             (namespace-info 'rksm.system-navigator.test.dummy-1)))))
+  
+  (testing "namespace report ignores interns without file"
+    (let [expected {:file nil
+                    :interns [{:ns 'rksm.system-navigator.test.dummy-1,
+                               :name 'x,
+                               :file "rksm/system_navigator/test/dummy_1.clj",
+                               :column 1,
+                               :line 3,
+                               :tag nil}]}]
+      (eval '(let [bindings {'*source-path* "NO_SOURCE_FILE"}]
+               (in-ns 'rksm.system-navigator.test.dummy-1) (def z 99)))
       (is (= expected
              (namespace-info 'rksm.system-navigator.test.dummy-1))))))
 
