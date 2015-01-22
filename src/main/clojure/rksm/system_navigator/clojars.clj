@@ -3,7 +3,9 @@
    [clj-http.client :as http]
    [clojure.tools.reader.edn :as edn]
    [clojure.tools.reader.reader-types :as t]
-   [clojure.data.json :as json])
+   [clojure.data.json :as json]
+   [clojure.string :as s]
+   [cemerick.pomegranate :refer (classloader-hierarchy get-classpath add-dependencies)])
   (:import
    [java.util.zip.GZIPInputStream]))
 
@@ -50,6 +52,56 @@
     (if-not (every? true? ((juxt #(.exists %) #(> (.length %) 0)) f))
       (spit f (clojars-project-defs->json)))
     f))
+
+(defn get-probable-namespaces-of-jar
+  [jar]
+  (let [jar-file (if (string? (type jar)) 
+                   (java.util.jar.JarFile. jar)
+                   jar)]
+    (some->> jar-file
+      .entries iterator-seq
+      (filter #(re-find #".clj" (str %)))
+      (filter #(not (re-find #"project.clj|META|\.cljs$|\.class" (str %))))
+      (map #(-> %
+              .getName
+              (clojure.string/replace #"/" ".")
+              (clojure.string/replace #"_" "-")
+              (clojure.string/replace #".clj$" "")
+              symbol)))))
+
+(defn get-probable-namespaces-for-maven-thing
+  [artifact-id group-id version]
+  (let [jar-name (-> (interpose "-" [artifact-id version])
+                   (concat [".jar"])
+                   s/join)
+        path (->> [group-id artifact-id version jar-name]
+               (interpose java.io.File/separator)
+               s/join)
+        jar (some->> (classloader-hierarchy)
+              get-classpath
+              (filter #(re-find (re-pattern path) %))
+              first
+              (#(s/replace-first % (re-matches #"file:.*" "file:") ""))
+              java.util.jar.JarFile.)]
+    (get-probable-namespaces-of-jar jar)))
+
+(defn install-clojar-package
+  [group-id artifact-id version]
+  (let [name (symbol (str group-id "/" artifact-id))
+        repos (merge cemerick.pomegranate.aether/maven-central
+                     {"clojars" "http://clojars.org/repo"})]
+    (add-dependencies :coordinates `[[~name ~version]]
+                      :repositories repos)))
+
+(defn install-clojar-package-and-print-namespaces
+  [group-id artifact-id version]
+  (install-clojar-package group-id artifact-id version)
+  (->> (rksm.system-navigator.clojars/get-probable-namespaces-for-maven-thing
+        group-id artifact-id version)
+    (interpose "\n  ")
+    (clojure.string/join "")
+    (format "%s/%s installed. Provided namespaces:\n  %s"
+            group-id artifact-id)))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
