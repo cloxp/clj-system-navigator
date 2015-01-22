@@ -31,9 +31,9 @@
     (str (s/join "\n" (concat before-lines [new-src-for-def] after-lines)))))
 
 (defn- update-source-file!
-  [sym src old-src]
+  [sym src old-src & [file]]
   (let [ns-sym (-> (.getNamespace sym) symbol find-ns ns-name)
-        file (fm/file-for-ns ns-sym)
+        file (fm/file-for-ns ns-sym file)
         old-file-src (slurp file)
         new-file-src (updated-source sym src old-src old-file-src)]
     (spit file new-file-src)))
@@ -42,12 +42,12 @@
   "1. eval new code
   2. record a change in a changeset
   3. if `write-to-file`, update source in file-system"
-  [sym new-source & [write-to-file]]
+  [sym new-source & [write-to-file file]]
   (eval-and-update-meta! sym new-source)
-  (let [old-src (i/file-source-for-sym sym)
+  (let [old-src (i/file-source-for-sym sym file)
         change (cs/record-change! sym new-source old-src)]
     (if (and old-src write-to-file)
-      (update-source-file! sym new-source old-src))))
+      (update-source-file! sym new-source old-src file))))
 
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
