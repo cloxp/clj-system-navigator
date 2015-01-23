@@ -181,6 +181,37 @@
   )
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+; file / namespace creation
+
+(defn ensure-file
+  [& [file]]
+  (if file
+    (let [f (clojure.java.io/file file)]
+      (.mkdirs (.getParentFile f))
+      (.createNewFile f)
+      f)
+    (let [name (str "file-less-namespace_"
+                    (quot (System/currentTimeMillis) 1000))
+          f (java.io.File/createTempFile name ".clj")]
+      f)))
+
+(defn ensure-classpath-for-new-ns
+  [ns-name dir]
+  (if-not (->> (fm/classpath)
+            (map #(.getCanonicalPath %))
+            (some #{dir}))
+    (fm/add-classpath dir)))
+
+(defn create-namespace-and-file
+  [ns-name dir]
+  (let [f (->> (fm/ns-name->rel-path ns-name)
+            (str dir java.io.File/separator)
+            ensure-file)]
+    (change-ns! ns-name (format "(ns %s)" ns-name) true (.getAbsolutePath f))
+    (ensure-classpath-for-new-ns ns-name dir)
+    (.getAbsolutePath f)))
+
+; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 (comment
  (require 'rksm.system-navigator.test.dummy-1 :reload)

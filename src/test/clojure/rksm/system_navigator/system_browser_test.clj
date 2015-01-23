@@ -1,11 +1,37 @@
-(ns rksm.system-navigator.system-browser-test
-  (:refer-clojure :exclude [add-classpath])
-  (:require [clojure.test :refer :all]
-            [rksm.system-navigator.system-browser :refer :all]
-            [rksm.system-navigator.ns.internals :refer (source-for-symbol namespace-info)]
-            [rksm.system-navigator.ns.filemapping :as fm]
-            [rksm.system-navigator.changesets :as cs]
-            (rksm.system-navigator.test dummy-1 dummy-3)))
+(deftest namespace-creation
+  ;   (clojure.tools.namespace.repl/refresh-all)
+  
+  (try
+    (let [sep java.io.File/separator
+          dir (str (System/getProperty "user.dir") sep "src")
+          expected-fn (clojure.string/join sep [dir "rksm" "foo" "bar_baz.clj"])]
+      
+      (testing "create a file"
+        (is (= expected-fn
+               (create-namespace-and-file 'rksm.foo.bar-baz dir)))
+        (is (-> expected-fn clojure.java.io/file .exists))
+        (is (= "(ns rksm.foo.bar-baz)"
+               (-> expected-fn slurp))))
+      
+      (testing "load namespace"
+        (create-namespace-and-file 'rksm.foo.bar-baz dir)
+        (is (boolean (find-ns 'rksm.foo.bar-baz)))
+        (is (boolean (find-ns 'rksm.foo.bar-baz))))
+      )
+
+    (finally 
+      (do 
+        (delete-recursively (str dir sep "rksm"))
+        (remove-ns 'rksm.foo.bar-baz))
+      )))
+
+(defn delete-recursively [fname]
+  (let [func (fn [func f]
+               (when (.isDirectory f)
+                 (doseq [f2 (.listFiles f)]
+                   (func func f2)))
+               (clojure.java.io/delete-file f))]
+    (func func (clojure.java.io/file fname))))
 
 (defonce test-file-1 (fm/file-for-ns 'rksm.system-navigator.test.dummy-1))
 (defonce test-file-2 (fm/file-for-ns 'rksm.system-navigator.test.dummy-3))
@@ -48,7 +74,7 @@
          (count (cs/get-changes 'rksm.system-navigator.test.dummy-1/x)))
       "change set recording")
 
-  (let [expected {:file (fm/file-name-for-ns 'rksm.system-navigator.test.dummy-1)
+  (let [expected {:file nil
                   :interns
                   [{:ns 'rksm.system-navigator.test.dummy-1,
                     :name 'x,
@@ -235,6 +261,29 @@
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+(deftest namespace-creation
+;   (clojure.tools.namespace.repl/refresh-all)
+  (let [sep java.io.File/separator
+        dir (str (System/getProperty "user.dir") sep "src")
+        expected-fn (clojure.string/join sep [dir "rksm" "foo" "bar_baz.clj"])]
+
+    (delete-recursively (str dir sep "rksm"))
+    
+    (testing "create a file"
+      (is (= expected-fn
+             (create-namespace-and-file 'rksm.foo.bar-baz dir)))
+      (is (-> expected-fn clojure.java.io/file .exists))
+      (is (= "(ns rksm.foo.bar-baz)"
+             (-> expected-fn slurp))))
+    
+    (testing "load namespace"
+      (create-namespace-and-file 'rksm.foo.bar-baz dir)
+      (is (boolean (find-ns 'rksm.foo.bar-baz)))
+      (is (boolean (find-ns 'rksm.foo.bar-baz))))
+    
+    ))
+
+; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 (comment
       (run-tests 'rksm.system-navigator.system-browser-test)
       (ns-interns 'rksm.system-navigator.system-browser-test)
