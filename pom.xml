@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.rksm</groupId>
   <artifactId>system-navigator</artifactId>
-  <packaging>jar</packaging>
+  <packaging>clojure</packaging>
   <version>0.1.8-SNAPSHOT</version>
   <name>${artifactId}</name>
   <description>Accessing Clojure runtime meta data. Tooling for cloxp.</description>
