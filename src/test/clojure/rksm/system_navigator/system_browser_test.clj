@@ -1,29 +1,11 @@
-(deftest namespace-creation
-  ;   (clojure.tools.namespace.repl/refresh-all)
-  
-  (try
-    (let [sep java.io.File/separator
-          dir (str (System/getProperty "user.dir") sep "src")
-          expected-fn (clojure.string/join sep [dir "rksm" "foo" "bar_baz.clj"])]
-      
-      (testing "create a file"
-        (is (= expected-fn
-               (create-namespace-and-file 'rksm.foo.bar-baz dir)))
-        (is (-> expected-fn clojure.java.io/file .exists))
-        (is (= "(ns rksm.foo.bar-baz)"
-               (-> expected-fn slurp))))
-      
-      (testing "load namespace"
-        (create-namespace-and-file 'rksm.foo.bar-baz dir)
-        (is (boolean (find-ns 'rksm.foo.bar-baz)))
-        (is (boolean (find-ns 'rksm.foo.bar-baz))))
-      )
-
-    (finally 
-      (do 
-        (delete-recursively (str dir sep "rksm"))
-        (remove-ns 'rksm.foo.bar-baz))
-      )))
+(ns rksm.system-navigator.system-browser-test
+  (:refer-clojure :exclude [add-classpath])
+  (:require [clojure.test :refer :all]
+            [rksm.system-navigator.system-browser :refer :all]
+            [rksm.system-navigator.ns.internals :refer (source-for-symbol namespace-info)]
+            [rksm.system-navigator.ns.filemapping :as fm]
+            [rksm.system-navigator.changesets :as cs]
+            (rksm.system-navigator.test dummy-1 dummy-3)))
 
 (defn delete-recursively [fname]
   (let [func (fn [func f]
@@ -33,11 +15,39 @@
                (clojure.java.io/delete-file f))]
     (func func (clojure.java.io/file fname))))
 
+(deftest namespace-creation
+                                        ;   (clojure.tools.namespace.repl/refresh-all)
+
+  (let [sep java.io.File/separator
+        dir (str (System/getProperty "user.dir") sep "src")
+        expected-fn (clojure.string/join sep [dir "rksm" "foo" "bar_baz.clj"])]
+
+    (try
+
+      (testing "create a file"
+        (is (= expected-fn
+               (create-namespace-and-file 'rksm.foo.bar-baz dir)))
+        (is (-> expected-fn clojure.java.io/file .exists))
+        (is (= "(ns rksm.foo.bar-baz)"
+               (-> expected-fn slurp))))
+
+      (testing "load namespace"
+        (create-namespace-and-file 'rksm.foo.bar-baz dir)
+        (is (boolean (find-ns 'rksm.foo.bar-baz)))
+        (is (boolean (find-ns 'rksm.foo.bar-baz))))
+
+
+      (finally
+        (do
+          (delete-recursively (str dir sep "rksm"))
+          (remove-ns 'rksm.foo.bar-baz))
+        ))))
+
 (defonce test-file-1 (fm/file-for-ns 'rksm.system-navigator.test.dummy-1))
 (defonce test-file-2 (fm/file-for-ns 'rksm.system-navigator.test.dummy-3))
 (defonce orig-source-1 (slurp test-file-1))
 (defonce orig-source-2 (slurp test-file-2))
-    
+
 (defn source-state-fixture [test]
   (reset! cs/current-changeset [])
   (require 'rksm.system-navigator.test.dummy-1 :reload)
@@ -91,22 +101,22 @@
 (deftest modify-ns-diff-from-runtime
   (testing "diff from runtime changes"
     (require 'rksm.system-navigator.test.dummy-1 :reload)
-    
+
     (is (= {:added [] :removed [] :changed []}
-           (change-ns-in-runtime! 
-            'rksm.system-navigator.test.dummy-1 
+           (change-ns-in-runtime!
+            'rksm.system-navigator.test.dummy-1
             "(ns rksm.system-navigator.test.dummy-1)\n\n(def x 23)"
             orig-source-1)))
-    
+
     (is (= {:added [] :removed [] :changed [{:ns 'rksm.system-navigator.test.dummy-1, :name 'x, :file "rksm/system_navigator/test/dummy_1.clj", :prev-source "(def x 23)", :source "(def x 24)", :column 1, :line 3, :tag nil}]}
-           (change-ns-in-runtime! 
-            'rksm.system-navigator.test.dummy-1 
+           (change-ns-in-runtime!
+            'rksm.system-navigator.test.dummy-1
             "(ns rksm.system-navigator.test.dummy-1)\n\n(def x 24)"
             orig-source-1)))
-    
+
     (is (= {:added [] :removed [{:ns 'rksm.system-navigator.test.dummy-1, :name 'x, :file "rksm/system_navigator/test/dummy_1.clj", :source "(def x 23)", :column 1, :line 3, :tag nil}] :changed []}
-           (change-ns-in-runtime! 
-            'rksm.system-navigator.test.dummy-1 
+           (change-ns-in-runtime!
+            'rksm.system-navigator.test.dummy-1
             "(ns rksm.system-navigator.test.dummy-1)"
             orig-source-1)))
     )
@@ -139,7 +149,7 @@
       (is (= new-src (slurp test-file-2))
           "written source"))
 
-    
+
     (is (= 1 (count (cs/get-changes 'rksm.system-navigator.test.dummy-3))))
 
     (testing "recorded change, ns part"
@@ -147,7 +157,7 @@
            ns-part (select-keys change [:sym])]
        (is (= {:sym 'rksm.system-navigator.test.dummy-3}
               ns-part))))
-    
+
     (testing "recorded change, diff part"
       (let [change (first (cs/get-changes 'rksm.system-navigator.test.dummy-3))
             expected {:added [],
@@ -194,7 +204,7 @@
 (deftest modify-ns-with-known-file
 
   (let [new-src "(ns rksm.system-navigator.test.dummy-3) (def x 25)"]
-    
+
      (change-ns! 'rksm.system-navigator.test.dummy-3 new-src true
                  (fm/file-name-for-ns 'rksm.system-navigator.test.dummy-3))
     ; (change-ns! 'rksm.system-navigator.test.dummy-3 new-src false)
@@ -202,7 +212,7 @@
      (testing "evaluation"
        (is (= 25
               (eval 'rksm.system-navigator.test.dummy-3/x))))
-    
+
     (testing "recorded change, diff part"
       (let [changes (-> (cs/get-changes 'rksm.system-navigator.test.dummy-3) first :changes)
             counts (into {} (for [[k v] changes] [k (count v)]))
@@ -268,19 +278,19 @@
         expected-fn (clojure.string/join sep [dir "rksm" "foo" "bar_baz.clj"])]
 
     (delete-recursively (str dir sep "rksm"))
-    
+
     (testing "create a file"
       (is (= expected-fn
              (create-namespace-and-file 'rksm.foo.bar-baz dir)))
       (is (-> expected-fn clojure.java.io/file .exists))
       (is (= "(ns rksm.foo.bar-baz)"
              (-> expected-fn slurp))))
-    
+
     (testing "load namespace"
       (create-namespace-and-file 'rksm.foo.bar-baz dir)
       (is (boolean (find-ns 'rksm.foo.bar-baz)))
       (is (boolean (find-ns 'rksm.foo.bar-baz))))
-    
+
     ))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

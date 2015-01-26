@@ -111,13 +111,23 @@
   (loaded-namespaces :matching #"rksm")
   )
 
+(defn- classpath-dir-for-ns
+  [ns & [classp]]
+  (let [relp (ns-name->rel-path ns)
+        dirs (filter #(.isDirectory %) (or classp (classpath)))]
+  (->> dirs
+    reverse
+    (filter #(-> % (str "/" relp) io/file .exists))
+    first)))
+
 (defn classpath-for-ns
   [ns-name]
-  (let [cp (classpath)
-        ns-per-cp (map #(nf/find-namespaces [%]) cp)]
-      (some->> (zipmap cp ns-per-cp)
-          (filter #(->> % val (some #{ns-name})))
-          last key)))
+  (let [cp (classpath)]
+    (or (classpath-dir-for-ns ns-name cp)
+        (let [ns-per-cp (map #(nf/find-namespaces [%]) cp)]
+          (some->> (zipmap cp ns-per-cp)
+            (filter #(->> % val (some #{ns-name})))
+            last key)))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ; classpath / namespace -> files
