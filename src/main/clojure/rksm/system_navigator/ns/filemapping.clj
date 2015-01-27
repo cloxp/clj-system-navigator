@@ -1,11 +1,14 @@
 (ns rksm.system-navigator.ns.filemapping
     (:refer-clojure :exclude [add-classpath])
     (:require [clojure.tools.namespace.find :as nf]
+              [clojure.tools.namespace.repl :as nr]
               [clojure.java.classpath :as cp]
               [clojure.java.io :as io]
               [dynapath.util :as dp]
               [cemerick.pomegranate]
               [rksm.system-navigator.fs-util :as fs]))
+
+(declare ns-name->rel-path classpath add-project-dir)
 
 (defn classloaders
   []
@@ -27,17 +30,38 @@
 (def class-dirs ["classes"])
 
 (defn- first-existing-file
-  [paths & [base-dir]]
+  [base-dir paths]
   (->> paths
-    (map #(str (or base-dir (System/getProperty "user.dir")) java.io.File/separator %))
+    (map #(str base-dir java.io.File/separator %))
     (map io/file)
     (filter #(.exists %))
     first))
 
+(comment
+ (first-existing-file "/Users/robert/clojure/system-navigator" common-src-dirs)
+ (find-source-test-compile-dirs "/Users/robert/clojure/system-navigator"))
+
+(defn find-source-test-compile-dirs
+  [base-dir]
+  (let [d base-dir
+        find-first (partial first-existing-file d)]
+    (->> [(find-first common-src-dirs)
+          (find-first common-test-dirs)  
+          (find-first class-dirs)]
+      (filter boolean))))
+
+(defn add-common-project-classpath
+  [& [base-dir]]
+  (add-project-dir
+   (or base-dir (System/getProperty "user.dir"))))
+
+(defn- classpath-dirs
+  []
+  (filter #(.isDirectory %) (classpath)))
+
 (defn- classpath-dir-known?
   [dir]
-  (->> (classpath)
-    (filter #(.isDirectory %))
+  (->> (classpath-dirs)
     (map str)
     (filter #(re-find (re-pattern dir) %))
     not-empty))
@@ -51,23 +75,12 @@
  
  (rksm.system-navigator.ns.filemapping/maybe-add-classpath-dir "/Users/robert/clojure/system-navigator")
  (classpath-dir-known? "/Users/robert/clojure/cloxp-trace")
- (->> (classpath) (filter #(.isDirectory %)) (map str))
+ (map str (classpath-dirs))
  )
-
-(defn add-common-project-classpath
-  [& [base-dir]]
-  (some->> (first-existing-file common-src-dirs base-dir)
-    (cemerick.pomegranate/add-classpath))
-  (some->> (first-existing-file common-test-dirs base-dir)
-    (cemerick.pomegranate/add-classpath))  
-  (some->> (first-existing-file class-dirs base-dir)
-    (cemerick.pomegranate/add-classpath)))
 
 ; -=-=-=-=-=-=-
 ; jar related
 ; -=-=-=-=-=-=-
-
-(declare ns-name->rel-path)
 
 (defn- jar-entry-for-ns
   [jar-file ns-name]
@@ -144,11 +157,20 @@
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 (defn ns-name->rel-path
-    [ns-name]
-    (-> ns-name str
-         (clojure.string/replace #"\." "/")
-         (clojure.string/replace #"-" "_")
-         (str ".clj")))
+  [ns-name]
+  (-> ns-name str
+    (clojure.string/replace #"\." "/")
+    (clojure.string/replace #"-" "_")
+    (str ".clj")))
+
+(defn rel-path->ns-name
+  [rel-path]
+  (-> rel-path
+    str
+    (clojure.string/replace #"/" ".")
+    (clojure.string/replace #"_" "-")
+    (clojure.string/replace #".clj$" "")
+    symbol))
 
 (defn- clj-files-in-dir
   [dir]
@@ -200,10 +222,44 @@
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+(defn- walk-dirs [dirpath pattern]
+  (doall (filter #(re-matches pattern (.getName %))
+                 (file-seq (io/file dirpath)))))
+ 
+(comment
+ (map #(println (.getPath %)) (walk-dirs "src" #".*\.clj$")))
+
+(defn discover-ns-in-cp-dir
+  [dir]
+  (->> (walk-dirs dir #".*\.clj$")
+    ; (map #(.getCanonicalPath %))
+    (map (partial fs/path-relative-to dir))
+    (map rel-path->ns-name)
+    ))
+
+(defn discover-ns-in-project-dir
+  [dir]
+  (->> (find-source-test-compile-dirs dir)
+    (mapcat discover-ns-in-cp-dir)))
+
+(defn add-project-dir
+  [dir]
+  (doseq [new-cp (find-source-test-compile-dirs dir)]
+    (cemerick.pomegranate/add-classpath new-cp))
+  (discover-ns-in-project-dir dir))
+
+(defn refresh-classpath-dirs
+  []
+  (apply nr/set-refresh-dirs (classpath-dirs))
+  (nr/refresh-all))
+
+; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 (comment
   (classpath)
   (loaded-namespaces)
   (file-for-ns 'rksm.system-navigator)
   (file-for-ns 'rksm.system-navigator "/Users/robert/clojure/system-navigator/src/main/clojure/rksm/system_navigator.clj")
   (relative-path-for-ns 'rksm.system-navigator "/Users/robert/clojure/system-navigator/src/main/clojure/rksm/system_navigator.clj")
+  (refresh-classpath-dirs)
   )
