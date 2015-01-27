@@ -22,25 +22,45 @@
     (-> cp io/file .toURI .toURL)))
 
 
-(def common-src-dirs ["src/main/clojure", "src/main/clj", "src/clojure", "src/clj", "src"])
+(def common-src-dirs ["src/main/clojure", "src/main/clj", "src/main", "src/clojure", "src/clj", "src"])
 (def common-test-dirs ["src/test/clojure", "src/test/clj", "src/test", "test/clojure", "test/clj", "test"])
 (def class-dirs ["classes"])
 
 (defn- first-existing-file
-  [paths]
+  [paths & [base-dir]]
   (->> paths
-     (map #(str (System/getProperty "user.dir") java.io.File/separator %))
-     (map io/file)
-     (filter #(.exists %))
-     first))
+    (map #(str (or base-dir (System/getProperty "user.dir")) java.io.File/separator %))
+    (map io/file)
+    (filter #(.exists %))
+    first))
+
+(defn- classpath-dir-known?
+  [dir]
+  (->> (classpath)
+    (filter #(.isDirectory %))
+    (map str)
+    (filter #(re-find (re-pattern dir) %))
+    not-empty))
+
+(defn maybe-add-classpath-dir
+  [dir]
+  (if-not (classpath-dir-known? dir)
+    (add-common-project-classpath dir)))
+
+(comment
+ 
+ (rksm.system-navigator.ns.filemapping/maybe-add-classpath-dir "/Users/robert/clojure/system-navigator")
+ (classpath-dir-known? "/Users/robert/clojure/cloxp-trace")
+ (->> (classpath) (filter #(.isDirectory %)) (map str))
+ )
 
 (defn add-common-project-classpath
-  []
-  (some->> (first-existing-file common-src-dirs)
+  [& [base-dir]]
+  (some->> (first-existing-file common-src-dirs base-dir)
     (cemerick.pomegranate/add-classpath))
-  (some->> (first-existing-file common-test-dirs)
+  (some->> (first-existing-file common-test-dirs base-dir)
     (cemerick.pomegranate/add-classpath))  
-  (some->> (first-existing-file class-dirs)
+  (some->> (first-existing-file class-dirs base-dir)
     (cemerick.pomegranate/add-classpath)))
 
 ; -=-=-=-=-=-=-
@@ -90,15 +110,15 @@
 (defn system-classpath
   []
   (some->> (System/getProperty "java.class.path")
-            io/file
-            (#(try (java.util.jar.JarFile. %) (catch Exception _)))
-            classpath-from-system-cp-jar))
+    io/file
+    (#(try (java.util.jar.JarFile. %) (catch Exception _)))
+    classpath-from-system-cp-jar))
 
 (defn classpath
   []
   (distinct (concat (system-classpath)
-          (cp/classpath)
-          (->> (dp/all-classpath-urls) (map io/file)))))
+                    (cp/classpath)
+                    (->> (dp/all-classpath-urls) (map io/file)))))
 
 (defn loaded-namespaces
   [& {m :matching}]
@@ -111,23 +131,13 @@
   (loaded-namespaces :matching #"rksm")
   )
 
-(defn- classpath-dir-for-ns
-  [ns & [classp]]
-  (let [relp (ns-name->rel-path ns)
-        dirs (filter #(.isDirectory %) (or classp (classpath)))]
-  (->> dirs
-    reverse
-    (filter #(-> % (str "/" relp) io/file .exists))
-    first)))
-
 (defn classpath-for-ns
   [ns-name]
-  (let [cp (classpath)]
-    (or (classpath-dir-for-ns ns-name cp)
-        (let [ns-per-cp (map #(nf/find-namespaces [%]) cp)]
-          (some->> (zipmap cp ns-per-cp)
-            (filter #(->> % val (some #{ns-name})))
-            last key)))))
+  (let [cp (classpath)
+        ns-per-cp (map #(nf/find-namespaces [%]) cp)]
+      (some->> (zipmap cp ns-per-cp)
+          (filter #(->> % val (some #{ns-name})))
+          last key)))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ; classpath / namespace -> files
