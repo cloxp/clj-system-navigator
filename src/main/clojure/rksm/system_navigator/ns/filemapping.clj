@@ -55,7 +55,7 @@
   (add-project-dir
    (or base-dir (System/getProperty "user.dir"))))
 
-(defn- classpath-dirs
+(defn classpath-dirs
   []
   (filter #(.isDirectory %) (classpath)))
 
