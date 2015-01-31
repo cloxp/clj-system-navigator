@@ -66,6 +66,11 @@
       <artifactId>data.json</artifactId>
       <version>0.2.3</version>
     </dependency>
+    <dependency>
+      <groupId>org.clojure</groupId>
+      <artifactId>data.xml</artifactId>
+      <version>0.0.8</version>
+    </dependency>
 
     <!--namespace discovery-->
     <dependency>
