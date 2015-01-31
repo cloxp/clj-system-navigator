@@ -43,11 +43,13 @@
   2. record a change in a changeset
   3. if `write-to-file`, update source in file-system"
   [sym new-source & [write-to-file file]]
-  (eval-and-update-meta! sym new-source)
-  (let [old-src (i/file-source-for-sym sym file)
-        change (cs/record-change! sym new-source old-src)]
+  (let [old-src (i/file-source-for-sym sym file)]
     (if (and old-src write-to-file)
-      (update-source-file! sym new-source old-src file))))
+      (update-source-file! sym new-source old-src file))
+    (eval-and-update-meta! sym new-source old-src)
+    (let [old-src (i/file-source-for-sym sym file)
+          change (cs/record-change! sym new-source old-src)]
+      (dissoc change :source :prev-source))))
 
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -145,7 +147,7 @@
         (map (fn [item]
                (binding [*print-length* nil
                          *print-level* nil]
-                        (pr-str item)))
+                 (pr-str item)))
              [source source-path file-name]))))))
 
 (defn change-ns-in-runtime!
@@ -173,10 +175,12 @@
   3. of `write-to-file`, update source in file-system"
   [ns-name new-source & [write-to-file file]]
   (if-let [old-src (fm/source-for-ns ns-name file)]
-    (let [diff (change-ns-in-runtime! ns-name new-source old-src file)
-          change (cs/record-change-ns! ns-name new-source old-src diff)]
+    (do
       (if write-to-file
-        (spit (fm/file-for-ns ns-name file) new-source)))
+        (spit (fm/file-for-ns ns-name file) new-source))
+      (let [diff (change-ns-in-runtime! ns-name new-source old-src file)
+            change (cs/record-change-ns! ns-name new-source old-src diff)]
+        change))
     (throw (Exception. (str "Cannot retrieve current source for " ns-name))))
   )
 
