@@ -45,9 +45,9 @@
   [base-dir]
   (let [d base-dir
         find-first (partial first-existing-file d)]
-    (->> [(find-first common-src-dirs)
-          (find-first common-test-dirs)  
-          (find-first class-dirs)]
+    (->> [;(find-first class-dirs)
+          (find-first common-src-dirs)
+          (find-first common-test-dirs)]
       (filter boolean))))
 
 (defn add-common-project-classpath
@@ -133,9 +133,17 @@
                     (cp/classpath)
                     (->> (dp/all-classpath-urls) (map io/file)))))
 
+(defn sorted-classpath
+  "returns classpath entries in an order that will prioritize local source
+  directories over maven and compiled jars and  target/classes dirs"
+  []
+  (->> (rksm.system-navigator.ns.filemapping/classpath)
+    (sort-by #(-> % .isDirectory not))
+    (sort-by #(-> % .getCanonicalPath (.endsWith "/classes")))))
+
 (defn loaded-namespaces
   [& {m :matching}]
-  (let [nss (nf/find-namespaces (classpath))
+  (let [nss (nf/find-namespaces (sorted-classpath))
         filtered (if m (filter #(re-find m (str %)) nss) nss)]
     (-> filtered distinct sort)))
 
@@ -146,11 +154,9 @@
 
 (defn classpath-for-ns
   [ns-name]
-  (let [cp (classpath)
-        ns-per-cp (map #(nf/find-namespaces [%]) cp)]
-      (some->> (zipmap cp ns-per-cp)
-          (filter #(->> % val (some #{ns-name})))
-          last key)))
+  (let [found (for [cp (sorted-classpath)]
+                (if (some #{ns-name} (nf/find-namespaces [cp])) cp))]
+    (first (filter (complement nil?) found))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ; classpath / namespace -> files
