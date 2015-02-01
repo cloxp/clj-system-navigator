@@ -23,15 +23,11 @@
     ; 2. update source loc of defs below
     (if-let [line-of-changed (-> ref meta :line)]
       (let [line-diff (- (count (s/split-lines src)) (count (s/split-lines old-src)))]
-        (swap! x conj line-diff)
         (doseq [ref (->> (ns-interns namespace)
                       vals
-                      (filter #(> (-> % meta :line) line-of-changed)))]
-          (alter-meta! ref
-                       (fn [meta] 
-                         (if-let [line (:line meta)]
-                           (assoc meta :line (+ line line-diff))
-                           meta))))))))
+                      (filter #(let [l (-> % meta :line)]
+                                 (and (number? l) (> l line-of-changed)))))]
+          (alter-meta! ref #(update-in % [:line] (partial + line-diff))))))))
 
 (defn updated-source
   "Takes the new source for a def and produces a new version of the ns source,
