@@ -33,7 +33,7 @@
         (if-let [o (tr/read rdr false nil)]
           (let [raw-str (purge-string! rdr)
                 lines (s/split-lines raw-str)
-                no-ws-lines (take-while #(re-find #"^\s*$" %) lines)
+                no-ws-lines (take-while #(re-find #"^\s*(;.*)?$" %) lines)
                 src-lines (drop (count no-ws-lines) lines)
                 first-line-ws-match (re-matches #"^(\s*)(.*)" (first src-lines))
                 src-lines (assoc (vec src-lines) 0 (nth first-line-ws-match 2))
