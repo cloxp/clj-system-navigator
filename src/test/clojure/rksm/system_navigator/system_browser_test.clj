@@ -97,6 +97,7 @@
                     :file "rksm/system_navigator/test/dummy_1.clj",
                     :column 1,
                     :line 3,
+                    :source "(def x 24)"
                     :tag nil}]}]
     (is (= expected
            (namespace-info 'rksm.system-navigator.test.dummy-1))

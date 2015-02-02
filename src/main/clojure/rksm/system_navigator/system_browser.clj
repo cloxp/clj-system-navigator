@@ -18,8 +18,9 @@
         old-meta (select-keys (meta ref) [:file :column :line])]
     ; 1. eval + update meta of changed def
     (binding [*ns* namespace]
-      (eval (read-string src))
-      (alter-meta! ref merge old-meta))
+      (eval (read-string src))) 
+    (alter-meta! ref merge old-meta)
+    (alter-meta! ref assoc :source src)
     ; 2. update source loc of defs below
     (if-let [line-of-changed (-> ref meta :line)]
       (let [line-diff (- (count (s/split-lines src)) (count (s/split-lines old-src)))]
