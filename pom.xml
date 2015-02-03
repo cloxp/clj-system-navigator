@@ -4,7 +4,7 @@
   <groupId>org.rksm</groupId>
   <artifactId>system-navigator</artifactId>
   <packaging>clojure</packaging>
-  <version>0.1.8-SNAPSHOT</version>
+  <version>0.1.9-SNAPSHOT</version>
   <name>${artifactId}</name>
   <description>Accessing Clojure runtime meta data. Tooling for cloxp.</description>
   <url>http://maven.apache.org</url>
@@ -38,19 +38,19 @@
 
       </plugin>
 
-      <plugin>
-       <groupId>org.apache.maven.plugins</groupId>
-       <artifactId>maven-gpg-plugin</artifactId>
-       <executions>
-         <execution>
-           <id>sign-artifacts</id>
-           <phase>verify</phase>
-           <goals>
-             <goal>sign</goal>
-           </goals>
-         </execution>
-       </executions>
-      </plugin>
+      <!--<plugin>-->
+      <!-- <groupId>org.apache.maven.plugins</groupId>-->
+      <!-- <artifactId>maven-gpg-plugin</artifactId>-->
+      <!-- <executions>-->
+      <!--   <execution>-->
+      <!--     <id>sign-artifacts</id>-->
+      <!--     <phase>verify</phase>-->
+      <!--     <goals>-->
+      <!--       <goal>sign</goal>-->
+      <!--     </goals>-->
+      <!--   </execution>-->
+      <!-- </executions>-->
+      <!--</plugin>-->
 
     </plugins>
   </build>
