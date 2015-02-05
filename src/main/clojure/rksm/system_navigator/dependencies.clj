@@ -58,7 +58,7 @@
 (defn load-deps-from-project-clj-or-pom-in
   [dir]
   (let [make-file (fn [n] (io/file (str dir java.io.File/separator n)))
-        project-clj (make-file "project-clj")
+        project-clj (make-file "project.clj")
         pom (make-file "pom.xml")
         deps (cond
                (.exists project-clj) (lein-deps project-clj)
