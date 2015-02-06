@@ -10,25 +10,34 @@
 ; changing defs
 ; -=-=-=-=-=-=-=-
 
-(defn- eval-and-update-meta!
-  "Eval specifically for defs, used by change-def!"
-  [sym src old-src]
+(defn unescape-slashes
+  [src]
+  (s/replace src (str "__" "SLASH" "__") "\\"))
+
+(defn eval-and-update-meta!
+  "eval + update meta of changed def, used by change-def!"
+  [sym src]
   (let [namespace (-> sym .getNamespace symbol find-ns)
         ref (find-var sym)
         old-meta (select-keys (meta ref) [:file :column :line])]
-    ; 1. eval + update meta of changed def
     (binding [*ns* namespace]
       (eval (read-string src))) 
-    (alter-meta! ref merge old-meta)
-    (alter-meta! ref assoc :source src)
-    ; 2. update source loc of defs below
-    (if-let [line-of-changed (-> ref meta :line)]
-      (let [line-diff (- (count (s/split-lines src)) (count (s/split-lines old-src)))]
-        (doseq [ref (->> (ns-interns namespace)
-                      vals
-                      (filter #(let [l (-> % meta :line)]
-                                 (and (number? l) (> l line-of-changed)))))]
-          (alter-meta! ref #(update-in % [:line] (partial + line-diff))))))))
+    (alter-meta! ref merge old-meta {:source src})))
+
+(defn update-source-pos-of-defs-below!
+  "shift / pull up defs follwoing def of sym to keep source location info up
+  to date"
+  [sym src old-src]
+  (let [ref (find-var sym)
+        namespace (-> sym .getNamespace symbol find-ns)]
+   (if-let [line-of-changed (-> ref meta :line)]
+     (let [line-diff (- (count (s/split-lines src)) 
+                        (count (s/split-lines old-src)))]
+       (doseq [ref (->> (ns-interns namespace)
+                     vals
+                     (filter #(let [l (-> % meta :line)]
+                                (and (number? l) (> l line-of-changed)))))]
+         (alter-meta! ref #(update-in % [:line] (partial + line-diff))))))))
 
 (defn updated-source
   "Takes the new source for a def and produces a new version of the ns source,
@@ -55,10 +64,12 @@
   2. record a change in a changeset
   3. if `write-to-file`, update source in file-system"
   [sym new-source & [write-to-file file]]
-  (let [old-src (i/file-source-for-sym sym file)]
+  (let [new-source (unescape-slashes new-source)
+        old-src (i/file-source-for-sym sym file)]
     (if (and old-src write-to-file)
       (update-source-file! sym new-source old-src file))
-    (eval-and-update-meta! sym new-source old-src)
+    (eval-and-update-meta! sym new-source)
+    (update-source-pos-of-defs-below! sym new-source old-src)
     (let [old-src (i/file-source-for-sym sym file)
           change (cs/record-change! sym new-source old-src)]
       (dissoc change :source :prev-source))))
@@ -186,14 +197,15 @@
   2. record a change in a changeset
   3. of `write-to-file`, update source in file-system"
   [ns-name new-source & [write-to-file file]]
-  (if-let [old-src (fm/source-for-ns ns-name file)]
-    (do
-      (if write-to-file
-        (spit (fm/file-for-ns ns-name file) new-source))
-      (let [diff (change-ns-in-runtime! ns-name new-source old-src file)
-            change (cs/record-change-ns! ns-name new-source old-src diff)]
-        change))
-    (throw (Exception. (str "Cannot retrieve current source for " ns-name))))
+  (let [new-source (unescape-slashes new-source)]
+   (if-let [old-src (fm/source-for-ns ns-name file)]
+     (do
+       (if write-to-file
+         (spit (fm/file-for-ns ns-name file) new-source))
+       (let [diff (change-ns-in-runtime! ns-name new-source old-src file)
+             change (cs/record-change-ns! ns-name new-source old-src diff)]
+         change))
+     (throw (Exception. (str "Cannot retrieve current source for " ns-name)))))
   )
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
