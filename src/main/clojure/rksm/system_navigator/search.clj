@@ -1,5 +1,5 @@
 (ns rksm.system-navigator.search
-    (:require [rksm.system-navigator.ns.filemapping :refer (loaded-namespaces source-reader-for-ns)]))
+    (:require [rksm.system-files :refer (loaded-namespaces source-reader-for-ns)]))
 
 (defn- code-search-single-ns
   [re ns-name]

@@ -3,7 +3,7 @@
   (:require [clojure.test :refer :all]
             [rksm.system-navigator.system-browser :refer :all]
             [rksm.system-navigator.ns.internals :refer (source-for-symbol namespace-info)]
-            [rksm.system-navigator.ns.filemapping :as fm]
+            [rksm.system-files :as fm]
             [rksm.system-navigator.changesets :as cs]
             (rksm.system-navigator.test dummy-1 dummy-3)))
 

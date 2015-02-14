@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [add-classpath])
   (:require [clojure.test :refer :all]
             [rksm.system-navigator.ns.internals :refer :all]
-            [rksm.system-navigator.ns.filemapping :refer (file-name-for-ns)]
+            [rksm.system-files :refer (file-name-for-ns)]
             (rksm.system-navigator.test dummy-1 dummy-3)))
 
 (deftest reading

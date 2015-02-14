@@ -4,7 +4,7 @@
             [clojure.tools.reader :as tr]
             [clojure.tools.reader.reader-types :as trt]
             [clojure.string :as s]
-            [rksm.system-navigator.ns.filemapping :refer (ns-name->rel-path file-name-for-ns source-reader-for-ns)]
+            [rksm.system-files :refer (ns-name->rel-path file-name-for-ns source-reader-for-ns)]
             [rksm.system-navigator.changesets :as cs]
             (clojure.tools.analyzer jvm ast))
   (:import (java.io LineNumberReader InputStreamReader PushbackReader)
@@ -125,7 +125,7 @@
 
 (defn add-source-to-interns
   "alternative for `source-for-symbol`. Instead of using clojure.repl this
-  functions uses the classloader info provided by filemapping to find more
+  functions uses the classloader info provided by system-files to find more
   recent versions of the source.
   NOTE: If there are multiple versions a lib on the classpath than it is
   possible that this function will retrieve code that i not actually in the

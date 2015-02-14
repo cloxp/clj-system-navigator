@@ -34,8 +34,8 @@
  (retrieve-changes 'rksm.system-navigator.test.dummy-1/x)
 
  
- (def src (rksm.system-navigator.ns.filemapping/source-for-ns 'rksm.system-navigator.test.dummy-1))
- (def src (rksm.system-navigator.ns.filemapping/source-for-ns 'rksm.system-navigator.ns.internals))
+ (def src (rksm.system-files/source-for-ns 'rksm.system-navigator.test.dummy-1))
+ (def src (rksm.system-files/source-for-ns 'rksm.system-navigator.ns.internals))
  (require '[clojure.tools.reader])
  
  (defn read-src

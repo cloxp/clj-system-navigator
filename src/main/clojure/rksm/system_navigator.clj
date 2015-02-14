@@ -1,6 +1,7 @@
 (ns rksm.system-navigator
   (:require (rksm.system-navigator search clojars completions system-browser dependencies)
-            (rksm.system-navigator.ns internals filemapping)))
+            (rksm.system-navigator.ns internals) 
+            rksm.system-files))
 
 (def ^{:dynamic true} *repl-source*)
 

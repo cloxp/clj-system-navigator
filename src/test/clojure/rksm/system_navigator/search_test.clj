@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [add-classpath])
   (:require [clojure.test :refer :all]
             [rksm.system-navigator.search :refer :all]
-            [rksm.system-navigator.ns.filemapping :refer (add-classpath)]
+            [rksm.system-files :refer (add-classpath)]
             [clojure.java.io :as io]))
 
 (deftest search

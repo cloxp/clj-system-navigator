@@ -1,6 +1,6 @@
 (ns rksm.system-navigator.system-browser
     (:require [rksm.system-navigator.ns.internals :as i])
-    (:require [rksm.system-navigator.ns.filemapping :as fm])
+    (:require [rksm.system-files :as fm])
     (:require [rksm.system-navigator.changesets :as cs])
     (:require [clojure.string :as s])
     (:require [clojure.set :as set])
