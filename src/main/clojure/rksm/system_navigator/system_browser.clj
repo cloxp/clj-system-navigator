@@ -10,10 +10,6 @@
 ; changing defs
 ; -=-=-=-=-=-=-=-
 
-(defn unescape-slashes
-  [src]
-  (s/replace src (str "__" "SLASH" "__") "\\"))
-
 (defn eval-and-update-meta!
   "eval + update meta of changed def, used by change-def!"
   [sym src]
@@ -64,8 +60,7 @@
   2. record a change in a changeset
   3. if `write-to-file`, update source in file-system"
   [sym new-source & [write-to-file file]]
-  (let [new-source (unescape-slashes new-source)
-        old-src (i/file-source-for-sym sym file)]
+  (let [old-src (i/file-source-for-sym sym file)]
     (if (and old-src write-to-file)
       (update-source-file! sym new-source old-src file))
     (eval-and-update-meta! sym new-source)
@@ -197,15 +192,14 @@
   2. record a change in a changeset
   3. of `write-to-file`, update source in file-system"
   [ns-name new-source & [write-to-file file]]
-  (let [new-source (unescape-slashes new-source)]
-   (if-let [old-src (fm/source-for-ns ns-name file)]
-     (do
-       (if write-to-file
-         (spit (fm/file-for-ns ns-name file) new-source))
-       (let [diff (change-ns-in-runtime! ns-name new-source old-src file)
-             change (cs/record-change-ns! ns-name new-source old-src diff)]
-         change))
-     (throw (Exception. (str "Cannot retrieve current source for " ns-name)))))
+  (if-let [old-src (fm/source-for-ns ns-name file)]
+    (do
+      (if write-to-file
+        (spit (fm/file-for-ns ns-name file) new-source))
+      (let [diff (change-ns-in-runtime! ns-name new-source old-src file)
+            change (cs/record-change-ns! ns-name new-source old-src diff)]
+        change))
+    (throw (Exception. (str "Cannot retrieve current source for " ns-name))))
   )
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
