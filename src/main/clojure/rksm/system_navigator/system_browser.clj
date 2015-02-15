@@ -1,10 +1,9 @@
 (ns rksm.system-navigator.system-browser
-    (:require [rksm.system-navigator.ns.internals :as i])
-    (:require [rksm.system-files :as fm])
-    (:require [rksm.system-navigator.changesets :as cs])
-    (:require [clojure.string :as s])
-    (:require [clojure.set :as set])
-    )
+  (:require [rksm.system-navigator.ns.internals :as i]
+            [rksm.system-files :as fm]
+            [rksm.system-navigator.changesets :as cs]
+            [clojure.string :as s]
+            [clojure.set :as set]))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ; changing defs
@@ -35,24 +34,14 @@
                                 (and (number? l) (> l line-of-changed)))))]
          (alter-meta! ref #(update-in % [:line] (partial + line-diff))))))))
 
-(defn updated-source
-  "Takes the new source for a def and produces a new version of the ns source,
-  with the new def code embedded"
-  [sym new-src-for-def old-src-for-def file-src]
-  (let [lines (s/split-lines file-src)
-        line (-> (find-var sym) meta :line dec)
-        before-lines (take line lines)
-        after-lines (-> old-src-for-def
-                      s/split-lines count
-                      (drop (drop line lines)))]
-    (str (s/join "\n" (concat before-lines [new-src-for-def] after-lines)))))
-
 (defn- update-source-file!
   [sym src old-src & [file]]
   (let [ns-sym (-> (.getNamespace sym) symbol find-ns ns-name)
         file (fm/file-for-ns ns-sym file)
         old-file-src (slurp file)
-        new-file-src (updated-source sym src old-src old-file-src)]
+        new-file-src (fm/updated-source
+                      sym (-> (find-var sym) meta) 
+                      src old-src old-file-src)]
     (spit file new-file-src)))
 
 (defn change-def!
@@ -205,33 +194,11 @@
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ; file / namespace creation
 
-(defn ensure-file
-  [& [file]]
-  (if file
-    (let [f (clojure.java.io/file file)]
-      (.mkdirs (.getParentFile f))
-      (.createNewFile f)
-      f)
-    (let [name (str "file-less-namespace_"
-                    (quot (System/currentTimeMillis) 1000))
-          f (java.io.File/createTempFile name ".clj")]
-      f)))
-
-(defn ensure-classpath-for-new-ns
-  [ns-name dir]
-  (if-not (->> (fm/classpath)
-            (map #(.getCanonicalPath %))
-            (some #{dir}))
-    (fm/add-classpath dir)))
-
 (defn create-namespace-and-file
   [ns-name dir]
-  (let [f (->> (fm/ns-name->rel-path ns-name)
-            (str dir java.io.File/separator)
-            ensure-file)]
-    (change-ns! ns-name (format "(ns %s)" ns-name) true (.getAbsolutePath f))
-    (ensure-classpath-for-new-ns ns-name dir)
-    (.getAbsolutePath f)))
+  (let [fname (fm/create-namespace-file ns-name dir ".clj")]
+    (change-ns! ns-name (format "(ns %s)" ns-name) true fname)
+    fname))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
