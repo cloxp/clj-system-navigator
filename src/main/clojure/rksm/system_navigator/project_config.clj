@@ -1,9 +1,10 @@
 (ns rksm.system-navigator.project-config
-  (:require [clojure.data.xml :as xml])
-  (:require [clojure.zip :as z])
-  (:require [clojure.string :as s])
-  (:require [cemerick.pomegranate :refer (add-dependencies)])
-  (:require [clojure.java.io :as io]))
+  (:require [clojure.data.xml :as xml]
+            [clojure.zip :as z]
+            [clojure.string :as s]
+            [cemerick.pomegranate :refer (add-dependencies)]
+            [clojure.java.io :as io]
+            [clojure.pprint :as pp]))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ; pom
@@ -79,16 +80,17 @@
 (defn lein-deps
   [project-clj-file]
   (let [proj (read-string (slurp project-clj-file))
+        a 2
         deps (some->> proj
                (drop-while (partial not= :dependencies))
                second)
         dev-deps (some-> (drop-while (partial not= :dev-dependencies) proj)
                    second)
         dev-deps-2 (some-> (drop-while (partial not= :profiles) proj)
-                     second
-                     :dev
-                     :dependencies)]
-    (into [] (apply merge deps dev-deps dev-deps-2))))
+                     second :dev :dependencies)]
+    (->> (concat deps dev-deps dev-deps-2)
+      (into [])
+      (filter boolean))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ; dependencies
@@ -100,9 +102,10 @@
                     :repositories (merge cemerick.pomegranate.aether/maven-central
                                          {"clojars" "http://clojars.org/repo"})))
 
-(defn load-deps-from-project-clj-or-pom-in
-  [dir]
-  (let [make-file (fn [n] (io/file (str dir java.io.File/separator n)))
+(defn project-deps
+  [& [dir]]
+  (let [dir (or dir (System/getProperty "user.dir"))
+        make-file (fn [n] (io/file (str dir java.io.File/separator n)))
         project-clj (make-file "project.clj")
         pom (make-file "pom.xml")
         deps (cond
@@ -110,8 +113,13 @@
                (.exists pom) (pom-deps pom)
                :default nil)
         cleaned-deps (filter (comp (partial not= 'org.clojure/clojure) first) deps)]
-    (if deps (doall (map install cleaned-deps)))
     cleaned-deps))
+
+(defn load-deps-from-project-clj-or-pom-in!
+  [dir]
+  (when-let [deps (project-deps dir)]
+    (doall (map install deps))
+    deps))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ; modifying poms and project.cljss
@@ -146,7 +154,7 @@
     (assert (.exists project-clj))
     (let [conf (-> project-clj slurp read-string)]
       (->> (project-clj-with-dep conf group-id artifact-id version)
-        (#(with-out-str (clojure.pprint/pprint %)))
+        (#(with-out-str (pp/pprint %)))
         (spit project-clj)))))
 
 (defn pom-with-dep
@@ -215,7 +223,10 @@
  
  (find-project-configuration-file "/Users/robert/clojure/cloxp-repl/")
  
- (load-deps-from-project-clj-or-pom-in "/Users/robert/clojure/cloxp-blog/")
+ (load-deps-from-project-clj-or-pom-in! "/Users/robert/clojure/cloxp-blog/")
+ (project-deps "/Users/robert/clojure/cloxp-cljs/")
+ (load-deps-from-project-clj-or-pom-in! "/Users/robert/clojure/system-navigator/")
+ (project-deps "/Users/robert/clojure/system-navigator/")
  (pom-deps "/Users/robert/clojure/cloxp-blog/pom.xml")
  (lein-deps "/Users/robert/clojure/seesaw/project.clj")
  (lein-deps "/Users/robert/clojure/cloxp-cljs/project.clj")
