@@ -70,7 +70,7 @@
               symbol)))))
 
 (defn get-probable-namespaces-for-maven-thing
-  [artifact-id group-id version]
+  [group-id artifact-id version]
   (let [jar-name (-> (interpose "-" [artifact-id version])
                    (concat [".jar"])
                    s/join)
@@ -102,6 +102,12 @@
     (clojure.string/join "")
     (format "%s/%s installed. Provided namespaces:\n  %s"
             group-id artifact-id)))
+
+(defn install-clojar-package-and-report-namespaces
+  [group-id artifact-id version]
+  (install-clojar-package group-id artifact-id version)
+  {:namespaces 
+   (get-probable-namespaces-for-maven-thing group-id artifact-id version)})
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
