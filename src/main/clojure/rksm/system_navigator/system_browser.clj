@@ -1,5 +1,6 @@
 (ns rksm.system-navigator.system-browser
   (:require [rksm.system-navigator.ns.internals :as i]
+            [rksm.cloxp-source-reader.core :as src-rdr]
             [rksm.system-files :as fm]
             [rksm.system-navigator.changesets :as cs]
             [clojure.string :as s]
@@ -92,7 +93,7 @@
 
 (defn- find-unchanged-interns
   [new-src old-interns]
-  (let [sources-new (map :source (i/read-objs new-src))
+  (let [sources-new (map :source (src-rdr/read-objs new-src))
         unchanged (for [src sources-new old old-interns
                         :when (= (clojure.string/trim src)
                                  (clojure.string/trim (:source old)))]
@@ -105,10 +106,10 @@
   added, and changed ns interns (defs). This is used to construct changes /
   changesets."
   [ns-name new-src old-src new-ns-info old-ns-info changed-vars]
-  (let [new-with-source (i/add-source-to-interns-with-reader
+  (let [new-with-source (src-rdr/add-source-to-interns-with-reader
                          (java.io.StringReader. new-src)
                          (sort-by :line new-ns-info))
-        old-with-source (i/add-source-to-interns-with-reader
+        old-with-source (src-rdr/add-source-to-interns-with-reader
                          (java.io.StringReader. old-src)
                          (sort-by :line old-ns-info))
         added (find-added-interns new-ns-info old-ns-info)
@@ -188,8 +189,7 @@
       (let [diff (change-ns-in-runtime! ns-name new-source old-src file)
             change (cs/record-change-ns! ns-name new-source old-src diff)]
         change))
-    (throw (Exception. (str "Cannot retrieve current source for " ns-name))))
-  )
+    (throw (Exception. (str "Cannot retrieve current source for " ns-name)))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ; file / namespace creation
@@ -208,7 +208,7 @@
 
  (let [ns 'rksm.system-navigator.test.dummy-1]
    (ns-interns ns))
- (i/add-source-to-interns
+ (src-rdr/add-source-to-interns
   'rksm.system-navigator.test.dummy-1
   [(i/intern-info (meta #'rksm.system-navigator.test.dummy-1/x))])
 

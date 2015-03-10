@@ -2,6 +2,8 @@
   (:refer-clojure :exclude [add-classpath])
   (:require [clojure.test :refer :all]
             [rksm.system-navigator.ns.internals :refer :all]
+            [rksm.cloxp-source-reader.core :as src-rdr]
+            [rksm.cloxp-source-reader.ast-reader :as ast-rdr]
             [rksm.system-files :refer (file-name-for-ns)]
             (rksm.system-navigator.test dummy-1 dummy-3)))
 
@@ -13,7 +15,7 @@
              :line 1,
              :column 1}
             {:form '(def x 23), :source "(def x 23)", :line 2, :column 3}]
-         (read-objs "(ns rksm.system-navigator.test.dummy-3)\n  (def x 23)\n")))))
+         (src-rdr/read-objs "(ns rksm.system-navigator.test.dummy-3)\n  (def x 23)\n")))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -31,7 +33,7 @@
                      :line 2}]]
       (is (= expected
              (map #(select-keys % [:name :ns :source :line])
-                  (read-and-parse src 'rksm.system-navigator.test.dummy-3)))))))
+                  (ast-rdr/read-and-parse src 'rksm.system-navigator.test.dummy-3)))))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -48,27 +50,27 @@
               {:source "(def y 24)" :column 1,:line 2}]
              (let [entities [{:column 1,:line 1} {:column 1,:line 2}]
                    source (java.io.StringReader. "(def x 23)\n(def y 24)\n")]
-               (add-source-to-interns-with-reader source entities)))))
+               (src-rdr/add-source-to-interns-with-reader source entities)))))
     
     (testing "less meta entities than source"
       (is (= [{:source "(def x 23)" :column 1,:line 1}
               {:source "(def y 24)" :column 1,:line 6}]
              (let [entities [{:column 1,:line 1} {:column 1,:line 6}]
                    source (java.io.StringReader. "(def x 23)\n(def baz\n\n99)\n\n(def y 24)\n")]
-               (add-source-to-interns-with-reader source entities)))))
+               (src-rdr/add-source-to-interns-with-reader source entities)))))
     
     (testing "more meta entities than source"
       (is (= [{:source "(def x 23)" :column 1,:line 1} {:source "" :column 1,:line 6}]
              (let [entities [{:column 1,:line 1} {:column 1,:line 6}]
                    source (java.io.StringReader. "(def x 23)")]
-               (add-source-to-interns-with-reader source entities)))))
+               (src-rdr/add-source-to-interns-with-reader source entities)))))
     
     (testing "not entities in source"
       "this might be kind of unexpected but the reader des not care bout lines"
       (is (= [{:source "(def y 24)" :column 1,:line 3} {:source "" :column 1,:line 6}]
              (let [entities [{:column 1,:line 3} {:column 1,:line 6}]
                    source (java.io.StringReader. "(def x 23)\n\n(def y 24)")]
-               (add-source-to-interns-with-reader source entities)))))))
+               (src-rdr/add-source-to-interns-with-reader source entities)))))))
 
 (deftest ns-internals
   
