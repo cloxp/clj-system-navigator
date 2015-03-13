@@ -65,8 +65,8 @@
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 (defn- info-id
-  [{ns :ns, name :name}]
-  {:ns ns :name name})
+  [{:keys [ns name] :as meta-data}]
+  (select-keys meta-data [ns name]))
 
 (defn- without-all-interns
   [base-interns without-interns]
@@ -189,7 +189,8 @@
       (let [diff (change-ns-in-runtime! ns-name new-source old-src file)
             change (cs/record-change-ns! ns-name new-source old-src diff)]
         change))
-    (throw (Exception. (str "Cannot retrieve current source for " ns-name)))))
+    (throw (Exception. (str "Cannot retrieve current source for " ns-name))))
+  )
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ; file / namespace creation
