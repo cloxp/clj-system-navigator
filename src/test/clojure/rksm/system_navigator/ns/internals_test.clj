@@ -41,36 +41,7 @@
 (deftest source-retrieval
   (testing "get source for intern"
     (is (= "(def x 23)"
-           (source-for-symbol 'rksm.system-navigator.test.dummy-1/x))))
-  
-  (testing "extract meta entities from source"
-    
-    (testing "meta entities match source"
-      (is (= [{:source "(def x 23)" :column 1,:line 1}
-              {:source "(def y 24)" :column 1,:line 2}]
-             (let [entities [{:column 1,:line 1} {:column 1,:line 2}]
-                   source (java.io.StringReader. "(def x 23)\n(def y 24)\n")]
-               (src-rdr/add-source-to-interns-with-reader source entities)))))
-    
-    (testing "less meta entities than source"
-      (is (= [{:source "(def x 23)" :column 1,:line 1}
-              {:source "(def y 24)" :column 1,:line 6}]
-             (let [entities [{:column 1,:line 1} {:column 1,:line 6}]
-                   source (java.io.StringReader. "(def x 23)\n(def baz\n\n99)\n\n(def y 24)\n")]
-               (src-rdr/add-source-to-interns-with-reader source entities)))))
-    
-    (testing "more meta entities than source"
-      (is (= [{:source "(def x 23)" :column 1,:line 1} {:source "" :column 1,:line 6}]
-             (let [entities [{:column 1,:line 1} {:column 1,:line 6}]
-                   source (java.io.StringReader. "(def x 23)")]
-               (src-rdr/add-source-to-interns-with-reader source entities)))))
-    
-    (testing "not entities in source"
-      "this might be kind of unexpected but the reader des not care bout lines"
-      (is (= [{:source "(def y 24)" :column 1,:line 3} {:source "" :column 1,:line 6}]
-             (let [entities [{:column 1,:line 3} {:column 1,:line 6}]
-                   source (java.io.StringReader. "(def x 23)\n\n(def y 24)")]
-               (src-rdr/add-source-to-interns-with-reader source entities)))))))
+           (source-for-symbol 'rksm.system-navigator.test.dummy-1/x)))))
 
 (deftest ns-internals
   

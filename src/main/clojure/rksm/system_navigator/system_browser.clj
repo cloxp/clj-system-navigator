@@ -65,7 +65,7 @@
 
 (defn- info-id
   [{:keys [ns name] :as meta-data}]
-  (select-keys meta-data [ns name]))
+  (select-keys meta-data [:ns :name]))
 
 (defn- without-all-interns
   [base-interns without-interns]
@@ -77,10 +77,14 @@
   "At this point we already now that new-ns-info and old-ns-info are in both
   new-src and old-src"
   [new-with-source old-with-source]
-  (for [a new-with-source b old-with-source
-          :when (and (= (info-id a) (info-id b))
-                     (not= (:source a) (:source b)))]
-      (assoc a :prev-source (:source b))))
+  (let [find-in-b (fn [a]
+                    (if-let [b (first (filter
+                                       (fn [b] (= (info-id a) (info-id b)))
+                                       old-with-source))]
+                      [a b] nil))]
+    (map
+     (fn [[a b]] (assoc a :prev-source (:source b) :file (or (:file a) (:file b))))
+     (keep find-in-b new-with-source))))
 
 (defn- find-added-interns
   [new-ns-info old-ns-info]
@@ -95,7 +99,7 @@
   (let [sources-new (map :source (src-rdr/read-objs new-src))
         unchanged (for [src sources-new old old-interns
                         :when (= (clojure.string/trim src)
-                                 (clojure.string/trim (:source old)))]
+                                 (or (some-> old :source clojure.string/trim) ""))]
                     old)]
     unchanged))
 
@@ -105,9 +109,10 @@
   added, and changed ns interns (defs). This is used to construct changes /
   changesets."
   [ns-name new-src old-src new-ns-info old-ns-info changed-vars]
-  (let [new-with-source (src-rdr/add-source-to-interns-with-reader
-                         (java.io.StringReader. new-src)
-                         (sort-by :line new-ns-info))
+  (let [new-with-source (->> (src-rdr/read-objs new-src)
+                          (filter (comp src-rdr/def? :form))
+                          (map #(assoc % :ns ns-name :name (src-rdr/name-of-def (:form %))))
+                          (map #(dissoc % :form)))
         old-with-source (src-rdr/add-source-to-interns-with-reader
                          (java.io.StringReader. old-src)
                          (sort-by :line old-ns-info))
