@@ -20,9 +20,11 @@
 ; Here we register my-test-fixture to be called once, wrapping ALL tests
 ; in the namespace
 (defn source-state-fixture [test]
-  (reset! cs/current-changeset [])
+  (spit test-file-1 orig-source-1)
+  (spit test-file-2 orig-source-2)
   (require 'rksm.system-navigator.test.dummy-1 :reload)
   (require 'rksm.system-navigator.test.dummy-3 :reload)
+  (reset! cs/current-changeset [])
   (test)
   (reset! cs/current-changeset [])
   (spit test-file-1 orig-source-1)
@@ -225,6 +227,12 @@
               (:interns (namespace-info 'rksm.system-navigator.test.dummy-3))))
        )))
 
+
+(do (spit test-file-2 orig-source-2)
+ (require 'rksm.system-navigator.test.dummy-3 :reload)
+ (reset! cs/current-changeset []))
+
+
 (deftest modify-ns-with-known-file
 
   (let [new-src "(ns rksm.system-navigator.test.dummy-3) (def x 25)"]
@@ -247,7 +255,7 @@
 
 (deftest diff-ns-test
 
-  (testing "no  changes"
+  (testing "no changes"
     (is (= {:added [] :removed [] :changed []}
            (diff-ns 'foo
                     "(ns foo)\n(def x 23)" "(ns foo)\n(def x 23)"

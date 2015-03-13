@@ -17,7 +17,7 @@
         ref (find-var sym)
         old-meta (select-keys (meta ref) [:file :column :line])]
     (binding [*ns* namespace]
-      (eval (read-string src))) 
+      (eval (read-string src)))
     (alter-meta! ref merge old-meta {:source src})))
 
 (defn update-source-pos-of-defs-below!
@@ -27,7 +27,7 @@
   (let [ref (find-var sym)
         namespace (-> sym .getNamespace symbol find-ns)]
    (if-let [line-of-changed (-> ref meta :line)]
-     (let [line-diff (- (count (s/split-lines src)) 
+     (let [line-diff (- (count (s/split-lines src))
                         (count (s/split-lines old-src)))]
        (doseq [ref (->> (ns-interns namespace)
                      vals
@@ -41,7 +41,7 @@
         file (fm/file-for-ns ns-sym file)
         old-file-src (slurp file)
         new-file-src (fm/updated-source
-                      sym (-> (find-var sym) meta) 
+                      sym (-> (find-var sym) meta)
                       src old-src old-file-src)]
     (spit file new-file-src)))
 
@@ -58,7 +58,6 @@
     (let [old-src (i/file-source-for-sym sym file)
           change (cs/record-change! sym new-source old-src)]
       (dissoc change :source :prev-source))))
-
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ; nitty-gritty details for how to "diff" changes
@@ -160,12 +159,12 @@
 
 (defn change-ns-in-runtime!
   [ns-name new-source old-src & [file-name]]
-  (let [old-ns-info (if (find-ns ns-name) 
+  (let [old-ns-info (if (find-ns ns-name)
                       (:interns (i/namespace-info ns-name file-name))
                       [])
         changed-vars (atom [])
         rel-path (fm/ns-name->rel-path ns-name)]
-    (if (find-ns ns-name) 
+    (if (find-ns ns-name)
       (install-watchers ns-name changed-vars))
     (try
       (load-ns-source! new-source rel-path)
@@ -173,8 +172,8 @@
     (let [new-ns-info (:interns (i/namespace-info ns-name file-name))
           diff (diff-ns ns-name new-source old-src new-ns-info old-ns-info @changed-vars)]
       (->> (:removed diff)
-        (doseq [rem (:removed diff)]
-          (ns-unmap (find-ns (:ns rem)) (:name rem))))
+        (doseq [{:keys [ns name]} (:removed diff)]
+          (ns-unmap (find-ns ns) name)))
       diff)))
 
 (defn change-ns!
