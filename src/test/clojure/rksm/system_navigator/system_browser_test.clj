@@ -134,7 +134,7 @@
             "(ns rksm.system-navigator.test.dummy-1)\n\n(def x 23)"
             orig-source-1)))
 
-    (is (= {:added [] :removed [] :changed [{:ns 'rksm.system-navigator.test.dummy-1, :name 'x, :file "rksm/system_navigator/test/dummy_1.clj", :prev-source "(def x 23)", :source "(def x 24)", :column 1, :line 3}]}
+    (is (= {:added [] :removed [] :changed [{:ns 'rksm.system-navigator.test.dummy-1, :name 'x, :file "rksm/system_navigator/test/dummy_1.clj", :prev-source "(def x 23)", :source "(def x 24)", :column 1, :line 3, :end-column 11, :end-line 3}]}
            (change-ns-in-runtime!
             'rksm.system-navigator.test.dummy-1
             "(ns rksm.system-navigator.test.dummy-1)\n\n(def x 24)"
@@ -196,12 +196,12 @@
                       '({:ns rksm.system-navigator.test.dummy-3,:name x,
                          :file "rksm/system_navigator/test/dummy_3.clj",
                          :prev-source "(def x 23)",:source "(def x 24)",
-                         :column 1,:line 5}
+                         :column 1,:line 5, :end-column 1, :end-line 6}
                         {:ns rksm.system-navigator.test.dummy-3,:name test-func,
                          :file "rksm/system_navigator/test/dummy_3.clj",
                          :prev-source "(defn test-func\n  [y]\n  (swap! dummy-atom conj (+ x y)))",
                          :source"(defn test-func\n[y]\n(swap! dummy-atom conj (+ x y 42)))",
-                         :column 1,:line 7})}]
+                         :column 1,:line 7, :end-column 1, :end-line 10})}]
         (is (= expected (:changes change)))))
 
      (let [expected [{:tag nil,
@@ -288,9 +288,9 @@
 
    (testing "source change"
      (is (= {:added [] :removed []
-             :changed [{:ns 'foo, :name 'x,:file "foo.clj",:column 1,:line 2
+             :changed [{:ns 'foo, :name 'x,:file "foo.clj",:column 1,:line 2, :end-column 1, :end-line 3
                         :source "(def x 24)" :prev-source "(def x 23)"}
-                       {:ns 'foo, :name 'y,:file "foo.clj",:column 1,:line 3
+                       {:ns 'foo, :name 'y,:file "foo.clj",:column 1,:line 3, :end-column 11, :end-line 3
                         :source "(def y 99)" :prev-source "(def y 98)"}]}
             (diff-ns 'foo
                      "(ns foo)\n(def x 24)\n(def y 99)" "(ns foo)\n(def x 23)\n(def y 98)"

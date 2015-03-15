@@ -17,7 +17,7 @@
   [sym & [file-path]]
   (let [ns-sym (-> (.getNamespace sym) symbol find-ns ns-name)
         interns [(intern-info (meta (find-var sym)))]
-        with-source (add-source-to-interns ns-sym interns file-path)]
+        with-source (add-source-to-interns ns-sym interns {:file file-path})]
     (:source (first with-source))))
 
 (defn source-for-symbol
@@ -29,7 +29,8 @@
    ; (some-> (cs/get-changes sym) last :source)
       (let [ns (-> sym .getNamespace symbol)]
         (-> (add-source-to-interns
-             ns [(symbol-info ns (-> sym name symbol))] ns-file-path)
+             ns [(symbol-info ns (-> sym name symbol))]
+             {:file ns-file-path, :cljx true})
           first :source)) 
       (try (clojure.repl/source-fn sym)
         (catch Exception e nil))))
