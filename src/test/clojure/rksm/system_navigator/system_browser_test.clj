@@ -134,13 +134,13 @@
             "(ns rksm.system-navigator.test.dummy-1)\n\n(def x 23)"
             orig-source-1)))
 
-    (is (= {:added [] :removed [] :changed [{:ns 'rksm.system-navigator.test.dummy-1, :name 'x, :file "rksm/system_navigator/test/dummy_1.clj", :prev-source "(def x 23)", :source "(def x 24)", :column 1, :line 3, :end-column 11, :end-line 3}]}
+    (is (= {:added [] :removed [] :changed [{:ns 'rksm.system-navigator.test.dummy-1, :name 'x, :file "rksm/system_navigator/test/dummy_1.clj", :prev-source "(def x 23)\n", :source "(def x 24)", :column 1, :line 3, :end-column 11, :end-line 3}]}
            (change-ns-in-runtime!
             'rksm.system-navigator.test.dummy-1
             "(ns rksm.system-navigator.test.dummy-1)\n\n(def x 24)"
             orig-source-1)))
 
-    (is (= {:added [] :removed [{:ns 'rksm.system-navigator.test.dummy-1, :name 'x, :file "rksm/system_navigator/test/dummy_1.clj", :source "(def x 23)", :column 1, :line 3, :tag nil}] :changed []}
+    (is (= {:added [] :removed [{:ns 'rksm.system-navigator.test.dummy-1, :name 'x, :file "rksm/system_navigator/test/dummy_1.clj", :source "(def x 23)\n", :column 1, :line 3, :tag nil}] :changed []}
            (change-ns-in-runtime!
             'rksm.system-navigator.test.dummy-1
             "(ns rksm.system-navigator.test.dummy-1)"
@@ -190,16 +190,16 @@
                       :removed
                       '({:ns rksm.system-navigator.test.dummy-3,:name foo,
                          :file "rksm/system_navigator/test/dummy_3.clj",
-                         :source "(defmacro foo\n  [x & body]\n  `(foo ~x ~@body))",
+                         :source "(defmacro foo\n  [x & body]\n  `(foo ~x ~@body))\n",
                          :column 1,:line 11,:macro true,:tag nil, :arglists ([x & body])}),
                       :changed
                       '({:ns rksm.system-navigator.test.dummy-3,:name x,
                          :file "rksm/system_navigator/test/dummy_3.clj",
-                         :prev-source "(def x 23)",:source "(def x 24)",
+                         :prev-source "(def x 23)\n",:source "(def x 24)",
                          :column 1,:line 5, :end-column 1, :end-line 6}
                         {:ns rksm.system-navigator.test.dummy-3,:name test-func,
                          :file "rksm/system_navigator/test/dummy_3.clj",
-                         :prev-source "(defn test-func\n  [y]\n  (swap! dummy-atom conj (+ x y)))",
+                         :prev-source "(defn test-func\n  [y]\n  (swap! dummy-atom conj (+ x y)))\n",
                          :source"(defn test-func\n[y]\n(swap! dummy-atom conj (+ x y 42)))",
                          :column 1,:line 7, :end-column 1, :end-line 10})}]
         (is (= expected (:changes change)))))
@@ -289,7 +289,7 @@
    (testing "source change"
      (is (= {:added [] :removed []
              :changed [{:ns 'foo, :name 'x,:file "foo.clj",:column 1,:line 2, :end-column 1, :end-line 3
-                        :source "(def x 24)" :prev-source "(def x 23)"}
+                        :source "(def x 24)" :prev-source "(def x 23)\n"}
                        {:ns 'foo, :name 'y,:file "foo.clj",:column 1,:line 3, :end-column 11, :end-line 3
                         :source "(def y 99)" :prev-source "(def y 98)"}]}
             (diff-ns 'foo

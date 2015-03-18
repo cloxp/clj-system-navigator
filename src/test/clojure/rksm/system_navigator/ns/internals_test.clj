@@ -10,7 +10,7 @@
 
 (deftest source-retrieval
   (testing "get source for intern"
-    (is (= "(def x 23)"
+    (is (= "(def x 23)\n"
            (source-for-symbol 'rksm.system-navigator.test.dummy-1/x)))))
 
 (deftest ns-internals
