@@ -1,2 +1,4 @@
 /target/
 /clojure-feather-pom.xml
+/.lein-failures
+/pom.xml

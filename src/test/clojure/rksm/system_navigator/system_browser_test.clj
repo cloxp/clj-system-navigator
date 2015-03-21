@@ -4,33 +4,40 @@
             [rksm.system-navigator.system-browser :refer :all]
             [rksm.system-navigator.ns.internals :refer (source-for-symbol namespace-info)]
             [rksm.system-files :as fm]
-            [rksm.system-navigator.changesets :as cs]
-            (rksm.system-navigator.test dummy-1 dummy-3)))
+            [rksm.system-files.cljx :as cljx]
+            [rksm.system-navigator.changesets :as cs]))
+
+(cljx/enable-cljx-load-support!)
+(require 'rksm.system-navigator.test.cljx-dummy :reload)
 
 (defonce test-file-1 (fm/file-for-ns 'rksm.system-navigator.test.dummy-1))
 (defonce test-file-2 (fm/file-for-ns 'rksm.system-navigator.test.dummy-3))
+(defonce test-file-3 (fm/file-for-ns 'rksm.system-navigator.test.cljx-dummy))
 (defonce orig-source-1 (slurp test-file-1))
 (defonce orig-source-2 (slurp test-file-2))
+(defonce orig-source-3 (slurp test-file-3))
 (defonce sep java.io.File/separator)
 (defonce test-dir (-> (fm/file-for-ns (ns-name *ns*))
                     .getParentFile .getParentFile .getParentFile .getParentFile
                     .getCanonicalPath
                     (str sep "namespace-creation-test")))
 
+(defn reset-test-state!
+  []
+  (spit test-file-1 orig-source-1)
+  (spit test-file-2 orig-source-2)
+  (spit test-file-3 orig-source-3)
+  (require 'rksm.system-navigator.test.dummy-1 :reload)
+  (require 'rksm.system-navigator.test.dummy-3 :reload)
+  (require 'rksm.system-navigator.test.cljx-dummy :reload)
+  (reset! cs/current-changeset []))
+
 ; Here we register my-test-fixture to be called once, wrapping ALL tests
 ; in the namespace
 (defn source-state-fixture [test]
-  (spit test-file-1 orig-source-1)
-  (spit test-file-2 orig-source-2)
-  (require 'rksm.system-navigator.test.dummy-1 :reload)
-  (require 'rksm.system-navigator.test.dummy-3 :reload)
-  (reset! cs/current-changeset [])
+  (reset-test-state!)
   (test)
-  (reset! cs/current-changeset [])
-  (spit test-file-1 orig-source-1)
-  (spit test-file-2 orig-source-2)
-  (require 'rksm.system-navigator.test.dummy-1 :reload)
-  (require 'rksm.system-navigator.test.dummy-3 :reload))
+  (reset-test-state!))
 
 (use-fixtures :each source-state-fixture)
 
@@ -66,8 +73,7 @@
       (finally
         (do
           (delete-recursively test-dir)
-          (remove-ns 'rksm.foo.bar-baz))
-        ))))
+          (remove-ns 'rksm.foo.bar-baz))))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -195,12 +201,12 @@
                       :changed
                       '({:ns rksm.system-navigator.test.dummy-3,:name x,
                          :file "rksm/system_navigator/test/dummy_3.clj",
-                         :prev-source "(def x 23)\n",:source "(def x 24)",
+                         :prev-source "(def x 23)\n",:source "(def x 24)\n",
                          :column 1,:line 5, :end-column 1, :end-line 6}
                         {:ns rksm.system-navigator.test.dummy-3,:name test-func,
                          :file "rksm/system_navigator/test/dummy_3.clj",
                          :prev-source "(defn test-func\n  [y]\n  (swap! dummy-atom conj (+ x y)))\n",
-                         :source"(defn test-func\n[y]\n(swap! dummy-atom conj (+ x y 42)))",
+                         :source"(defn test-func\n[y]\n(swap! dummy-atom conj (+ x y 42)))\n",
                          :column 1,:line 7, :end-column 1, :end-line 10})}]
         (is (= expected (:changes change)))))
 
@@ -224,15 +230,8 @@
                       :tag nil,
                       :arglists '([y])}]]
        (is (= expected
-              (:interns (namespace-info 'rksm.system-navigator.test.dummy-3))))
-       )))
+              (:interns (namespace-info 'rksm.system-navigator.test.dummy-3)))))))
 
-
-(comment
- (do (spit test-file-2 orig-source-2)
-   (require 'rksm.system-navigator.test.dummy-3 :reload)
-   (reset! cs/current-changeset []))
- (rksm.cloxp-source-reader.core/read-objs new-src))
 
 (deftest modify-ns-with-known-file
 
@@ -289,7 +288,7 @@
    (testing "source change"
      (is (= {:added [] :removed []
              :changed [{:ns 'foo, :name 'x,:file "foo.clj",:column 1,:line 2, :end-column 1, :end-line 3
-                        :source "(def x 24)" :prev-source "(def x 23)\n"}
+                        :source "(def x 24)\n" :prev-source "(def x 23)\n"}
                        {:ns 'foo, :name 'y,:file "foo.clj",:column 1,:line 3, :end-column 11, :end-line 3
                         :source "(def y 99)" :prev-source "(def y 98)"}]}
             (diff-ns 'foo
@@ -298,11 +297,56 @@
                       {:ns 'foo, :name 'y,:file "foo.clj",:column 1,:line 3,:tag nil}]
                      [{:ns 'foo, :name 'x,:file "foo.clj",:column 1,:line 2,:tag nil}
                       {:ns 'foo, :name 'y,:file "foo.clj",:column 1,:line 3,:tag nil}]
-                     [{:ns 'foo :name 'x}{:ns 'foo :name 'y}])))))
+                     [{:ns 'foo :name 'x}{:ns 'foo :name 'y}]))))))
+
+; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+; cljx specific
+
+(deftest modify-ns-diff-from-runtime
+
+  #_(testing "diff from runtime changes"
+    (require 'rksm.system-navigator.test.cljx-dummy :reload)
+    
+    (is (= {:added [] :removed [] :changed []}
+           (change-ns-in-runtime!
+            'rksm.system-navigator.test.cljx-dummy
+            (clojure.string/replace orig-source-3 #"def x 23" "def x 22")
+            orig-source-3)))
+
+    )
   )
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 (comment
+
  (run-tests 'rksm.system-navigator.system-browser-test)
+
+ (->> (ns-interns *ns*) vals (map meta) (filter #(contains? % :test)) (map :name))
+ 
+ (test-var #'modify-ns-diff-from-runtime)
+ (reset-test-state!)
+
+ (test-var #'modify-ns-with-known-file)
+ (reset-test-state!)
+
+ (test-var #'modify-ns-diff-from-runtime)
+ (reset-test-state!)
+
+ (test-var #'modify-ns-internals)
+ (reset-test-state!)
+
+ (test-var #'diff-ns-test)
+ (reset-test-state!)
+
+ (test-var #'modify-ns-everything)
+ (reset-test-state!)
+
+ (test-var #'namespace-creation)
+ (reset-test-state!)
+
+ (test-var #'source-location-update)
+ (reset-test-state!)
+
+
  )
