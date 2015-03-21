@@ -26,21 +26,22 @@
   [sym src old-src]
   (let [ref (find-var sym)
         namespace (-> sym .getNamespace symbol find-ns)]
-   (if-let [line-of-changed (-> ref meta :line)]
-     (let [line-diff (- (count (s/split-lines src))
-                        (count (s/split-lines old-src)))]
-       (doseq [ref (->> (ns-interns namespace)
-                     vals
-                     (filter #(let [l (-> % meta :line)]
-                                (and (number? l) (> l line-of-changed)))))]
-         (alter-meta! ref #(update-in % [:line] (partial + line-diff))))))))
+    (if-let [line-of-changed (-> ref meta :line)]
+      (let [line-diff (- (count (s/split-lines src))
+                         (count (s/split-lines old-src)))]
+        (when-not (zero? line-diff)
+          (doseq [ref (->> (ns-interns namespace)
+                        vals
+                        (filter #(let [l (-> % meta :line)]
+                                   (and (number? l) (> l line-of-changed)))))]
+            (alter-meta! ref #(update-in % [:line] (partial + line-diff)))))))))
 
 (defn- update-source-file!
   [sym src old-src & [file]]
   (let [ns-sym (-> (.getNamespace sym) symbol find-ns ns-name)
         file (fm/file-for-ns ns-sym file)
         old-file-src (slurp file)
-        new-file-src (fm/updated-source
+        new-file-src (src-rdr/updated-source
                       sym (-> (find-var sym) meta)
                       src old-src old-file-src)]
     (spit file new-file-src)))
