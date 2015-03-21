@@ -52,24 +52,24 @@
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 (deftest namespace-creation
-  
+
   (let [expected-fn (clojure.string/join sep [test-dir "rksm" "foo" "bar_baz.clj"])]
-    
+
     (try
-      
+
       (testing "create a file"
         (is (= expected-fn
                (create-namespace-and-file 'rksm.foo.bar-baz test-dir)))
         (is (-> expected-fn clojure.java.io/file .exists))
         (is (= "(ns rksm.foo.bar-baz)"
                (-> expected-fn slurp))))
-      
+
       (testing "load namespace"
         (create-namespace-and-file 'rksm.foo.bar-baz test-dir)
         (is (boolean (find-ns 'rksm.foo.bar-baz)))
         (is (boolean (find-ns 'rksm.foo.bar-baz))))
-      
-      
+
+
       (finally
         (do
           (delete-recursively test-dir)
@@ -86,7 +86,7 @@
          (eval 'rksm.system-navigator.test.dummy-1/x))
       "evaluation")
 
-  (is (= "(def x 24)"
+  (is (= "(def x 24)\n"
          (source-for-symbol 'rksm.system-navigator.test.dummy-1/x))
       "source retrieval")
 
@@ -118,11 +118,11 @@
    (is (= '(3 5 7 11)
           (->> (namespace-info 'rksm.system-navigator.test.dummy-3)
             :interns
-            (map :line)))) 
-   
+            (map :line))))
+
    (change-def! 'rksm.system-navigator.test.dummy-3/x
                 "(def x\n\n24)" true)
-   
+
    (is (= '(3 7 9 13)
           (->> (namespace-info 'rksm.system-navigator.test.dummy-3)
             :interns
@@ -274,30 +274,29 @@
 
   (testing "removal"
     (is (= {:added []
-            :removed [{:source "(def y 24)":ns 'foo, :name 'y,:file "foo.clj",:column 1,:line 3,:tag nil}]
+            :removed [{:source "(def y 24)\n":ns 'foo, :name 'y,:file "foo.clj",:column 1,:line 3,:tag nil}]
             :changed []}
            (diff-ns 'foo
-                     "(ns foo)\n(def x 23)" "(ns foo)\n(def x 23)\n(def y 24)"
-                     [{:ns 'foo, :name 'x,:file "foo.clj",:column 1,:line 2,:tag nil}]
-                     [{:ns 'foo, :name 'x,:file "foo.clj",:column 1,:line 2,:tag nil}
-                      {:ns 'foo, :name 'y,:file "foo.clj",:column 1,:line 3,:tag nil}]
-                     []))))
+                    "(ns foo)\n(def x 23)" "(ns foo)\n(def x 23)\n(def y 24)"
+                    [{:ns 'foo, :name 'x,:file "foo.clj",:column 1,:line 2,:tag nil}]
+                    [{:ns 'foo, :name 'x,:file "foo.clj",:column 1,:line 2,:tag nil}
+                     {:ns 'foo, :name 'y,:file "foo.clj",:column 1,:line 3,:tag nil}]
+                    []))))
 
   (testing "changed"
 
-   (testing "source change"
-     (is (= {:added [] :removed []
-             :changed [{:ns 'foo, :name 'x,:file "foo.clj",:column 1,:line 2, :end-column 1, :end-line 3
-                        :source "(def x 24)\n" :prev-source "(def x 23)\n"}
-                       {:ns 'foo, :name 'y,:file "foo.clj",:column 1,:line 3, :end-column 11, :end-line 3
-                        :source "(def y 99)" :prev-source "(def y 98)"}]}
-            (diff-ns 'foo
-                     "(ns foo)\n(def x 24)\n(def y 99)" "(ns foo)\n(def x 23)\n(def y 98)"
-                     [{:ns 'foo, :name 'x,:file "foo.clj",:column 1,:line 2,:tag nil}
-                      {:ns 'foo, :name 'y,:file "foo.clj",:column 1,:line 3,:tag nil}]
-                     [{:ns 'foo, :name 'x,:file "foo.clj",:column 1,:line 2,:tag nil}
-                      {:ns 'foo, :name 'y,:file "foo.clj",:column 1,:line 3,:tag nil}]
-                     [{:ns 'foo :name 'x}{:ns 'foo :name 'y}]))))))
+    (is (= {:added [] :removed []
+            :changed [{:ns 'foo, :name 'x,:file "foo.clj",:column 1,:line 2, :end-column 1, :end-line 3
+                       :source "(def x 24)\n" :prev-source "(def x 23)\n"}
+                      {:ns 'foo, :name 'y,:file "foo.clj",:column 1,:line 3, :end-column 1, :end-line 4
+                       :source "(def y 99)\n" :prev-source "(def y 98)\n"}]}
+           (diff-ns 'foo
+                    "(ns foo)\n(def x 24)\n(def y 99)" "(ns foo)\n(def x 23)\n(def y 98)"
+                    [{:ns 'foo, :name 'x,:file "foo.clj",:column 1,:line 2,:tag nil}
+                     {:ns 'foo, :name 'y,:file "foo.clj",:column 1,:line 3,:tag nil}]
+                    [{:ns 'foo, :name 'x,:file "foo.clj",:column 1,:line 2,:tag nil}
+                     {:ns 'foo, :name 'y,:file "foo.clj",:column 1,:line 3,:tag nil}]
+                    [{:ns 'foo :name 'x}{:ns 'foo :name 'y}])))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ; cljx specific
@@ -306,7 +305,7 @@
 
   #_(testing "diff from runtime changes"
     (require 'rksm.system-navigator.test.cljx-dummy :reload)
-    
+
     (is (= {:added [] :removed [] :changed []}
            (change-ns-in-runtime!
             'rksm.system-navigator.test.cljx-dummy
@@ -323,7 +322,7 @@
  (run-tests 'rksm.system-navigator.system-browser-test)
 
  (->> (ns-interns *ns*) vals (map meta) (filter #(contains? % :test)) (map :name))
- 
+
  (test-var #'modify-ns-diff-from-runtime)
  (reset-test-state!)
 
