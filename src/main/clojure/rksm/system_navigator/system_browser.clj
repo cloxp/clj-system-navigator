@@ -3,6 +3,7 @@
             [rksm.cloxp-source-reader.core :as src-rdr]
             [rksm.system-files :as fm]
             [rksm.system-navigator.changesets :as cs]
+            [rksm.cloxp-repl :as repl]
             [clojure.string :as s]
             [clojure.set :as set]))
 
@@ -12,13 +13,11 @@
 
 (defn eval-and-update-meta!
   "eval + update meta of changed def, used by change-def!"
-  [sym src]
-  (let [namespace (-> sym .getNamespace symbol find-ns)
-        ref (find-var sym)
-        old-meta (select-keys (meta ref) [:file :column :line])]
-    (binding [*ns* namespace]
-      (eval (read-string src)))
-    (alter-meta! ref merge old-meta {:source src})))
+  [sym src & [file]]
+  (let [namespace (-> sym .getNamespace symbol find-ns)]
+    (repl/eval-string
+     src (-> sym .getNamespace symbol find-ns)
+     {:keep-meta [:file :column :line], :file file})))
 
 (defn update-source-pos-of-defs-below!
   "shift / pull up defs follwoing def of sym to keep source location info up
@@ -54,7 +53,7 @@
   (let [old-src (i/file-source-for-sym sym file)]
     (if (and old-src write-to-file)
       (update-source-file! sym new-source old-src file))
-    (eval-and-update-meta! sym new-source)
+    (eval-and-update-meta! sym new-source file)
     (update-source-pos-of-defs-below! sym new-source old-src)
     (let [old-src (i/file-source-for-sym sym file)
           change (cs/record-change! sym new-source old-src)]
@@ -147,33 +146,18 @@
 ; high level ns change funcs
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-(defn load-ns-source!
-  "Load-file equivalent"
-  [source source-path]
-  (let [file-name (-> source-path
-                    (s/split (re-pattern (java.io.File/separator)))
-                    last)]
-    (eval
-     (read-string
-      (apply format
-        "(clojure.lang.Compiler/load (java.io.StringReader. %s) %s %s)"
-        (map (fn [item]
-               (binding [*print-length* nil
-                         *print-level* nil]
-                 (pr-str item)))
-             [source source-path file-name]))))))
-
 (defn change-ns-in-runtime!
   [ns-name new-source old-src & [file-name]]
   (let [old-ns-info (if (find-ns ns-name)
                       (:interns (i/namespace-info ns-name file-name))
                       [])
         changed-vars (atom [])
-        rel-path (fm/ns-name->rel-path ns-name)]
+        ext (if file-name (str (re-find #"\.[^\.]+$"(str file-name))))
+        rel-path (fm/ns-name->rel-path ns-name ext)]
     (if (find-ns ns-name)
       (install-watchers ns-name changed-vars))
     (try
-      (load-ns-source! new-source rel-path)
+      (repl/load-file new-source rel-path)
       (finally (uninstall-watchers ns-name)))
     (let [new-ns-info (:interns (i/namespace-info ns-name file-name))
           diff (diff-ns ns-name new-source old-src new-ns-info old-ns-info @changed-vars)]

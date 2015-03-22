@@ -8,6 +8,7 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.rksm/system-files "0.1.3-SNAPSHOT"]
                  [org.rksm/cloxp-source-reader "0.1.0-SNAPSHOT"]
+                 [org.rksm/cloxp-repl "0.1.1-SNAPSHOT"]
                  [org.clojure/data.json "0.2.3"]
                  [im.chit/iroh "0.1.11"]
                  [compliment/compliment "0.2.0"]

@@ -97,16 +97,14 @@
   (is (= 1
          (count (cs/get-changes 'rksm.system-navigator.test.dummy-1/x)))
       "change set recording")
-
-  (let [expected {:file nil
-                  :interns
-                  [{:ns 'rksm.system-navigator.test.dummy-1,
-                    :name 'x,
-                    :file "rksm/system_navigator/test/dummy_1.clj",
-                    :column 1,
-                    :line 3,
-                    :source "(def x 24)",
-                    :tag nil}]}]
+  
+  (let [expected {:file nil,
+                  :interns '({:ns rksm.system-navigator.test.dummy-1,
+                              :file "rksm/system_navigator/test/dummy_1.clj",
+                              :name x,
+                              :end-column 1, :column 1, :line 3, :end-line 2,
+                              :source "(def x 24)\n",
+                              :form (def x 24), :tag nil})}]
     (is (= expected
            (namespace-info 'rksm.system-navigator.test.dummy-1))
         "intern-info")))
