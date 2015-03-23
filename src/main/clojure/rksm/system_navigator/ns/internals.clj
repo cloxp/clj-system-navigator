@@ -46,7 +46,8 @@
 (defn intern-info
   [intern-meta]
   (if-let [ns (:ns intern-meta)]
-    (let [name (:name intern-meta)
+    (let [intern-meta (dissoc intern-meta :form)
+          name (:name intern-meta)
           ns-name (.name ns)
           tag (if-let [tag (:tag intern-meta)] (str tag))]
       (merge intern-meta

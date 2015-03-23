@@ -104,7 +104,7 @@
                               :name x,
                               :end-column 1, :column 1, :line 3, :end-line 2,
                               :source "(def x 24)\n",
-                              :form (def x 24), :tag nil})}]
+                              :tag nil})}]
     (is (= expected
            (namespace-info 'rksm.system-navigator.test.dummy-1))
         "intern-info")))
