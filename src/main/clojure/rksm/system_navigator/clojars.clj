@@ -55,7 +55,7 @@
 
 (defn get-probable-namespaces-of-jar
   [jar]
-  (let [jar-file (if (string? (type jar)) 
+  (let [jar-file (if (string? (type jar))
                    (java.util.jar.JarFile. jar)
                    jar)]
     (some->> jar-file
@@ -106,7 +106,7 @@
 (defn install-clojar-package-and-report-namespaces
   [group-id artifact-id version]
   (install-clojar-package group-id artifact-id version)
-  {:namespaces 
+  {:namespaces
    (get-probable-namespaces-for-maven-thing group-id artifact-id version)})
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -117,14 +117,12 @@
  (def x (clojars-project-defs))
  (type x)
  (-> (take 10 x) json/write-str)
- 
+
  (-> (take-last 10 x) json/write-str)
  (-> (take 10 x) (json/write (clojure.java.io/writer (get-clojars-json-file))))
  (json/write (clojars-project-defs) (clojure.java.io/writer (get-clojars-json-file)))
- 
+
  (require '[clojure.string :refer [join]])
  (->> (clojars-uncompressed-content) (take 100) join)
  (time (-> (clojars-project-defs) count))
  (clojars-project-defs))
-
-
