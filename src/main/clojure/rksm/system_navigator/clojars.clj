@@ -1,6 +1,6 @@
 (ns rksm.system-navigator.clojars
   (:require
-   [clj-http.client :as http]
+   [org.httpkit.client :as http]
    [clojure.tools.reader.edn :as edn]
    [clojure.tools.reader.reader-types :as t]
    [clojure.data.json :as json]
@@ -12,7 +12,7 @@
 (defn clojars-feed-stream
   []
   (let [req (http/get "http://clojars.org/repo/feed.clj.gz" {:as :stream})]
-    (req :body)))
+    (-> req deref :body)))
 
 (defmacro with-clojars-uncompressed-content
   [s-name & body]
