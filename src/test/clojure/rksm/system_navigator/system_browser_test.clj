@@ -308,16 +308,13 @@
            (change-ns-in-runtime!
             'rksm.system-navigator.test.cljx-dummy
             (clojure.string/replace orig-source-3 #"def x 23" "def x 22")
-            orig-source-3)))
-
-    )
-  )
+            orig-source-3)))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 (comment
 
- (run-tests 'rksm.system-navigator.system-browser-test)
+ (run-tests *ns*)
 
  (->> (ns-interns *ns*) vals (map meta) (filter #(contains? % :test)) (map :name))
 

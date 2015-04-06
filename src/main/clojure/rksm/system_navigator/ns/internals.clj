@@ -43,13 +43,18 @@
   (if-let [p (:protocol intern-info)]
     {:protocol (meta p)} {}))
 
+(def intern-keys [:private
+                  :ns :name
+                  :file :column :line :end-column :end-line
+                  :tag :arglists
+                  :macro :source])
+
 (defn intern-info
-  [intern-meta]
-  (if-let [ns (:ns intern-meta)]
-    (let [intern-meta (dissoc intern-meta :form)
-          name (:name intern-meta)
+  [{:keys [ns name tag] :as intern-meta}]
+  (if ns
+    (let [intern-meta (select-keys intern-meta intern-keys)
           ns-name (.name ns)
-          tag (if-let [tag (:tag intern-meta)] (str tag))]
+          tag (if tag (str tag))]
       (merge intern-meta
              {:ns ns-name :tag tag}
              (protocol-info intern-meta)))))
