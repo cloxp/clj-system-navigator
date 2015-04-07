@@ -51,11 +51,16 @@
   2. record a change in a changeset
   3. if `write-to-file`, update source in file-system"
   [sym new-source & [write-to-file file]]
-  (let [old-src (i/file-source-for-sym sym file)]
+  (let [ns-name (-> sym namespace symbol)
+        file (or file (fm/file-for-ns ns-name file))
+        ext (if file (str (re-find #"\.[^\.]+$" (str file))))
+        old-src (i/file-source-for-sym sym file)]
     (if (and old-src write-to-file)
       (update-source-file! sym new-source old-src file))
     (eval-and-update-meta! sym new-source file)
     (update-source-pos-of-defs-below! sym new-source old-src)
+    (if (= ext ".cljx")
+      (cljx/ns-compile-cljx->cljs ns-name file))
     (let [old-src (i/file-source-for-sym sym file)
           change (cs/record-change! sym new-source old-src)]
       (dissoc change :source :prev-source))))
