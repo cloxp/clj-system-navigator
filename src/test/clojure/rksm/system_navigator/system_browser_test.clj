@@ -5,7 +5,8 @@
             [rksm.system-navigator.ns.internals :refer (source-for-symbol namespace-info)]
             [rksm.system-files :as fm]
             [rksm.system-files.cljx :as cljx]
-            [rksm.system-navigator.changesets :as cs]))
+            [rksm.system-navigator.changesets :as cs]
+            [clojure.java.io :as io]))
 
 (cljx/enable-cljx-load-support!)
 (require 'rksm.system-navigator.test.cljx-dummy :reload)
@@ -17,10 +18,15 @@
 (defonce orig-source-2 (slurp test-file-2))
 (defonce orig-source-3 (slurp test-file-3))
 (defonce sep java.io.File/separator)
-(defonce test-dir (-> (fm/file-for-ns (ns-name *ns*))
+(defonce test-dir (-> (fm/file-for-ns 'rksm.system-navigator.system-browser-test)
                     .getParentFile .getParentFile .getParentFile .getParentFile
                     .getCanonicalPath
                     (str sep "namespace-creation-test")))
+(defonce project-dir (-> (fm/file-for-ns 'rksm.system-navigator.system-browser-test)
+                       .getParentFile .getParentFile
+                       .getParentFile .getParentFile
+                       .getParentFile .getParentFile
+                    .getCanonicalPath))
 
 (defn reset-test-state!
   []
@@ -301,14 +307,24 @@
 
 (deftest modify-ns-diff-from-runtime
 
-  #_(testing "diff from runtime changes"
-    (require 'rksm.system-navigator.test.cljx-dummy :reload)
-
-    (is (= {:added [] :removed [] :changed []}
+  (require 'rksm.system-navigator.test.cljx-dummy :reload)
+  
+  (testing "runtime changes"
+    (is (= {:added [] :removed [] :changed [{:file "rksm/system_navigator/test/cljx_dummy.cljx",
+                                             :source "(def x 22)\n",
+                                             :prev-source "(def x 23)\n",
+                                             :name 'x,
+                                             :ns 'rksm.system-navigator.test.cljx-dummy,
+                                             :end-column 1, :end-line 15, :line 14, :column 1}]}
            (change-ns-in-runtime!
             'rksm.system-navigator.test.cljx-dummy
             (clojure.string/replace orig-source-3 #"def x 23" "def x 22")
-            orig-source-3)))))
+            orig-source-3))))
+  
+  (testing "cljx -> cljs compilation"
+    (let [expected-cljs-file (io/file (str project-dir "/target/classes/rksm/system_navigator/test/cljx_dummy.cljs"))]
+      (is (.exists expected-cljs-file))
+      (.delete expected-cljs-file))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 

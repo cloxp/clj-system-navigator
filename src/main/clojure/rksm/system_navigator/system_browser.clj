@@ -2,6 +2,7 @@
   (:require [rksm.system-navigator.ns.internals :as i]
             [rksm.cloxp-source-reader.core :as src-rdr]
             [rksm.system-files :as fm]
+            [rksm.system-files.cljx :as cljx]
             [rksm.system-navigator.changesets :as cs]
             [rksm.cloxp-repl :as repl]
             [clojure.string :as s]
@@ -147,19 +148,22 @@
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 (defn change-ns-in-runtime!
-  [ns-name new-source old-src & [file-name]]
-  (let [old-ns-info (if (find-ns ns-name)
-                      (:interns (i/namespace-info ns-name file-name))
+  [ns-name new-source old-src & [file]]
+  (let [file (or file (fm/file-for-ns ns-name file))
+        old-ns-info (if (find-ns ns-name)
+                      (:interns (i/namespace-info ns-name file))
                       [])
         changed-vars (atom [])
-        ext (if file-name (str (re-find #"\.[^\.]+$"(str file-name))))
+        ext (if file (str (re-find #"\.[^\.]+$" (str file))))
         rel-path (fm/ns-name->rel-path ns-name ext)]
     (if (find-ns ns-name)
       (install-watchers ns-name changed-vars))
     (try
       (repl/load-file new-source rel-path)
       (finally (uninstall-watchers ns-name)))
-    (let [new-ns-info (:interns (i/namespace-info ns-name file-name))
+    (if (= ext ".cljx")
+      (cljx/ns-compile-cljx->cljs ns-name file))
+    (let [new-ns-info (:interns (i/namespace-info ns-name file))
           diff (diff-ns ns-name new-source old-src new-ns-info old-ns-info @changed-vars)]
       (->> (:removed diff)
         (doseq [{:keys [ns name]} (:removed diff)]
@@ -171,15 +175,15 @@
   2. record a change in a changeset
   3. of `write-to-file`, update source in file-system"
   [ns-name new-source & [write-to-file file]]
-  (if-let [old-src (fm/source-for-ns ns-name file)]
-    (do
-      (if write-to-file
-        (spit (fm/file-for-ns ns-name file) new-source))
-      (let [diff (change-ns-in-runtime! ns-name new-source old-src file)
-            change (cs/record-change-ns! ns-name new-source old-src diff)]
-        change))
-    (throw (Exception. (str "Cannot retrieve current source for " ns-name))))
-  )
+  (let [file (or file (fm/file-for-ns ns-name file))]
+    (if-let [old-src (fm/source-for-ns ns-name file)]
+      (do
+        (if write-to-file
+          (spit file new-source))
+        (let [diff (change-ns-in-runtime! ns-name new-source old-src file)
+              change (cs/record-change-ns! ns-name new-source old-src diff)]
+          change))
+      (throw (Exception. (str "Cannot retrieve current source for " ns-name))))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ; file / namespace creation
