@@ -166,15 +166,13 @@
     (if (find-ns ns-name)
       (install-watchers ns-name changed-vars))
     (try
-      (repl/load-file new-source rel-path)
+      (repl/eval-changed-from-source new-source old-src ns-name
+                                     {:file rel-path, :throw-errors? true})
       (finally (uninstall-watchers ns-name)))
     (if (= ext ".cljx")
       (cljx/ns-compile-cljx->cljs ns-name file))
     (let [new-ns-info (:interns (i/namespace-info ns-name file))
           diff (diff-ns ns-name new-source old-src new-ns-info old-ns-info @changed-vars)]
-      (->> (:removed diff)
-        (doseq [{:keys [ns name]} (:removed diff)]
-          (ns-unmap (find-ns ns) name)))
       diff)))
 
 (defn change-ns!

@@ -172,14 +172,15 @@
 (swap! dummy-atom conj (+ x y 42)))
 "]
 
-     (change-ns! 'rksm.system-navigator.test.dummy-3 new-src true)
+    (change-ns! 'rksm.system-navigator.test.dummy-3 new-src true)
     ; (change-ns! 'rksm.system-navigator.test.dummy-3 new-src false)
 
      (testing "evaluation"
        (is (= 24
-              (eval 'rksm.system-navigator.test.dummy-3/x)))
+              (-> 'rksm.system-navigator.test.dummy-3/x find-var deref)))
        (is (= 67
-              (last (eval '(rksm.system-navigator.test.dummy-3/test-func 1))))))
+              (last ((-> 'rksm.system-navigator.test.dummy-3/test-func find-var deref) 1))))
+       (is (nil? (find-var 'rksm.system-navigator.test.dummy-3/foo))))
 
     (testing "write to file"
       (is (= new-src (slurp test-file-2))
@@ -218,19 +219,20 @@
                       :ns 'rksm.system-navigator.test.dummy-3,
                       :name 'dummy-atom,
                       :file "rksm/system_navigator/test/dummy_3.clj",
-                      :column 1,
-                      :line 3}
+                      :column 1, :line 3
+                      :end-column 1, :end-line 4}
                      {:ns 'rksm.system-navigator.test.dummy-3,
                       :name 'x,
                       :file "rksm/system_navigator/test/dummy_3.clj",
-                      :column 1,
-                      :line 5,
+                      :column 1,:line 5,
+                      :end-column 1, :end-line 6, :source "(def x 24)\n"
                       :tag nil}
                      {:ns 'rksm.system-navigator.test.dummy-3,
                       :name 'test-func,
                       :file "rksm/system_navigator/test/dummy_3.clj",
-                      :column 1,
-                      :line 7,
+                      :column 1, :line 7,
+                      :end-line 10, :end-column 1
+                       :source "(defn test-func\n[y]\n(swap! dummy-atom conj (+ x y 42)))\n",
                       :tag nil,
                       :arglists '([y])}]]
        (is (= expected
@@ -331,7 +333,7 @@
 (comment
 
  (run-tests *ns*)
-
+ 
  (->> (ns-interns *ns*) vals (map meta) (filter #(contains? % :test)) (map :name))
 
  (test-var #'modify-ns-diff-from-runtime)
@@ -357,6 +359,4 @@
 
  (test-var #'source-location-update)
  (reset-test-state!)
-
-
  )
