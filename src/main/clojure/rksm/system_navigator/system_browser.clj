@@ -15,10 +15,12 @@
 (defn eval-and-update-meta!
   "eval + update meta of changed def, used by change-def!"
   [sym src & [file]]
-  (let [namespace (-> sym .getNamespace symbol find-ns)]
-    (repl/eval-string
-     src (-> sym .getNamespace symbol find-ns)
-     {:keep-meta [:file :column :line], :file file})))
+  (let [namespace (-> sym .getNamespace symbol find-ns)
+        [{:keys [error value]}]
+        (repl/eval-string
+         src (-> sym .getNamespace symbol find-ns)
+         {:keep-meta [:file :column :line], :file file})]
+    (or error value)))
 
 (defn update-source-pos-of-defs-below!
   "shift / pull up defs follwoing def of sym to keep source location info up
@@ -180,7 +182,7 @@
   2. record a change in a changeset
   3. of `write-to-file`, update source in file-system"
   [ns-name new-source & [write-to-file file]]
-  (let [file (or file (fm/file-for-ns ns-name file))]
+  (if-let [file (or file (fm/file-for-ns ns-name file))]
     (if-let [old-src (fm/source-for-ns ns-name file)]
       (do
         (if write-to-file
