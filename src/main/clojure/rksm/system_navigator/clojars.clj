@@ -1,13 +1,13 @@
 (ns rksm.system-navigator.clojars
-  (:require
-   [org.httpkit.client :as http]
-   [clojure.tools.reader.edn :as edn]
-   [clojure.tools.reader.reader-types :as t]
-   [clojure.data.json :as json]
-   [clojure.string :as s]
-   [cemerick.pomegranate :refer (classloader-hierarchy get-classpath add-dependencies)])
-  (:import
-   [java.util.zip.GZIPInputStream]))
+  (:require [org.httpkit.client :as http]
+            [clojure.tools.reader.edn :as edn]
+            [clojure.tools.reader.reader-types :as t]
+            [clojure.data.json :as json]
+            [clojure.string :as s]
+            [cemerick.pomegranate :refer (classloader-hierarchy get-classpath add-dependencies)]
+            [rksm.system-files.jar-util :refer (namespaces-in-jar)]
+            [rksm.system-files :as sf :refer (file)])
+  (:import [java.util.zip.GZIPInputStream]))
 
 (defn clojars-feed-stream
   []
@@ -74,16 +74,15 @@
   (let [jar-name (-> (interpose "-" [artifact-id version])
                    (concat [".jar"])
                    s/join)
-        path (->> [group-id artifact-id version jar-name]
-               (interpose java.io.File/separator)
-               s/join)
-        jar (some->> (classloader-hierarchy)
-              get-classpath
-              (filter #(re-find (re-pattern path) %))
-              first
-              (#(s/replace-first % (re-matches #"file:.*" "file:") ""))
-              java.util.jar.JarFile.)]
-    (get-probable-namespaces-of-jar jar)))
+        path-re (->> [group-id artifact-id version jar-name]
+                  (interpose java.io.File/separator)
+                  s/join
+                  re-pattern)
+        jar (->> (sf/classpath)
+              (filter (comp (partial re-find path-re) str))
+              first)]
+    (->> (namespaces-in-jar jar #"clj(x)?$")
+      (map :ns) distinct)))
 
 (defn install-clojar-package
   [group-id artifact-id version]
