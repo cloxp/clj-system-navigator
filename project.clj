@@ -15,4 +15,4 @@
                  [org.clojure/tools.nrepl "0.2.7"]
                  [com.cemerick/pomegranate "0.3.0"]
                  [http-kit "2.1.16"]
-                 [org.clojure/tools.reader "0.8.16"]])
+                 [org.clojure/tools.reader "0.9.1"]])
