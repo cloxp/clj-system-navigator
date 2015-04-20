@@ -25,15 +25,14 @@
   When files get reloaded / defs redefined this can mean that the code being
   retrieved is outdated"
   [sym & [ns-file-path]]
-  (or 
-   ; (some-> (cs/get-changes sym) last :source)
-      (let [ns (-> sym .getNamespace symbol)]
-        (-> (add-source-to-interns
-             ns [(symbol-info ns (-> sym name symbol))]
-             {:file ns-file-path, :cljx true})
-          first :source)) 
-      (try (clojure.repl/source-fn sym)
-        (catch Exception e nil))))
+  (or
+   (let [ns (or (some-> (namespace sym) symbol) 'user)]
+     (-> (add-source-to-interns
+          ns [(symbol-info ns (-> sym name symbol))]
+          {:file ns-file-path, :cljx true})
+       first :source))
+   (try (clojure.repl/source-fn sym)
+     (catch Exception e nil))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ; namespace / meta data interface
