@@ -19,7 +19,7 @@
         [{:keys [error value]}]
         (repl/eval-string
          src (-> sym .getNamespace symbol find-ns)
-         {:keep-meta [:file :column :line], :file file})]
+         {:keep-meta [:file :column :line], :file file, :throw-errors? true})]
     (or error value)))
 
 (defn update-source-pos-of-defs-below!
@@ -57,12 +57,16 @@
         file (or file (fm/file-for-ns ns-name file))
         ext (if file (str (re-find #"\.[^\.]+$" (str file))))
         old-src (i/file-source-for-sym sym file)]
+
     (if (and old-src write-to-file)
       (update-source-file! sym new-source old-src file))
+
     (eval-and-update-meta! sym new-source file)
     (update-source-pos-of-defs-below! sym new-source old-src)
+
     (if (= ext ".cljx")
       (cljx/ns-compile-cljx->cljs ns-name file))
+
     (let [old-src (i/file-source-for-sym sym file)
           change (cs/record-change! sym new-source old-src)]
       (dissoc change :source :prev-source))))
