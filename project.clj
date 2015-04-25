@@ -1,4 +1,4 @@
-(defproject org.rksm/system-navigator "0.1.13"
+(defproject org.rksm/system-navigator "0.1.14"
   :description "Accessing Clojure runtime meta data. Tooling for cloxp."
   :url "http://github.com/cloxp/clj-system-navigator"
   :license {:name "MIT License"
