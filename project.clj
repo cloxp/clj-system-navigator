@@ -1,4 +1,4 @@
-(defproject org.rksm/system-navigator "0.1.14"
+(defproject org.rksm/system-navigator "0.1.15"
   :description "Accessing Clojure runtime meta data. Tooling for cloxp."
   :url "http://github.com/cloxp/clj-system-navigator"
   :license {:name "MIT License"
@@ -6,9 +6,9 @@
   :source-paths ["src/main/clojure"]
   :test-paths ["src/test/clojure"]
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.rksm/system-files "0.1.4"]
-                 [org.rksm/cloxp-source-reader "0.1.3"]
-                 [org.rksm/cloxp-repl "0.1.3"]
+                 [org.rksm/system-files "0.1.5"]
+                 [org.rksm/cloxp-source-reader "0.1.4"]
+                 [org.rksm/cloxp-repl "0.1.4"]
                  [org.clojure/data.json "0.2.3"]
                  [im.chit/iroh "0.1.11"]
                  [compliment/compliment "0.2.0"]
