@@ -166,15 +166,14 @@
                       [])
         changed-vars (atom [])
         ext (if file (str (re-find #"\.[^\.]+$" (str file))))
-        rel-path (fm/ns-name->rel-path ns-name ext)]
+        rel-path (fm/ns-name->rel-path ns-name ext)
+        cljx? (= ext ".cljx")]
     (if (find-ns ns-name)
       (install-watchers ns-name changed-vars))
     (try
-      (repl/eval-changed-from-source new-source old-src ns-name
-                                     {:file rel-path, :throw-errors? true})
+      (repl/eval-string new-source ns-name {:file rel-path, :throw-errors? true})
       (finally (uninstall-watchers ns-name)))
-    (if (= ext ".cljx")
-      (cljx/ns-compile-cljx->cljs ns-name file))
+    (if cljx? (cljx/ns-compile-cljx->cljs ns-name file))
     (let [new-ns-info (:interns (i/namespace-info ns-name file))
           diff (diff-ns ns-name new-source old-src new-ns-info old-ns-info @changed-vars)]
       diff)))

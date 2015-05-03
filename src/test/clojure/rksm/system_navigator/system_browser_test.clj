@@ -55,6 +55,10 @@
                (clojure.java.io/delete-file f))]
     (func func (clojure.java.io/file fname))))
 
+(defmacro codify
+  [& body]
+  `(clojure.string/join "\n" (map str '~body)))
+
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 (deftest namespace-creation
@@ -303,6 +307,28 @@
                     [{:ns 'foo, :name 'x,:file "foo.clj",:column 1,:line 2,:tag nil}
                      {:ns 'foo, :name 'y,:file "foo.clj",:column 1,:line 3,:tag nil}]
                     [{:ns 'foo :name 'x}{:ns 'foo :name 'y}])))))
+
+; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+; multimethods
+
+(deftest modify-ns-with-multi-methods
+
+  (testing "modifying defmulti"
+    (remove-ns 'multi-test-2)
+    (let [f (java.io.File/createTempFile "multi_test_2" ".clj")
+          source-1 (codify (ns multi-test-2)
+                           (defmulti multi-f (fn [x & _] x))
+                           (defmethod multi-f :a [_ x] (+ x 1))
+                           (defmethod multi-f :b [_ x] (+ x 2)))
+          source-2 (codify (ns multi-test-2)
+                           (defmulti multi-f (constantly :b))
+                           (defmethod multi-f :a [_ x] (+ x 1))
+                           (defmethod multi-f :b [_ x] (+ x 2)))]
+      (spit f source-1)
+      (load-file (str f))
+      (eval (read-string "(ns-unmap 'multi-test-2 'multi-f)"))
+      (change-ns-in-runtime! 'multi-test-2 source-2 source-1)
+      (is (= 5 (eval (read-string "(multi-test-2/multi-f :a 3)")))))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ; cljx specific
