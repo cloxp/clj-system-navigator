@@ -108,16 +108,13 @@
          (count (cs/get-changes 'rksm.system-navigator.test.dummy-1/x)))
       "change set recording")
   
-  (let [expected {:file nil,
-                  :interns '({:ns rksm.system-navigator.test.dummy-1,
-                              :file "rksm/system_navigator/test/dummy_1.clj",
-                              :name x,
-                              :end-column 1, :column 1, :line 3, :end-line 2,
-                              :source "(def x 24)\n",
-                              :tag nil})}]
-    (is (= expected
-           (namespace-info 'rksm.system-navigator.test.dummy-1))
-        "intern-info")))
+  (let [{ns-file :file [{:keys [ns name file line column source]}] :interns}
+        (namespace-info 'rksm.system-navigator.test.dummy-1)]
+    (is (= [nil
+            'rksm.system-navigator.test.dummy-1, 'x,
+            "rksm/system_navigator/test/dummy_1.clj"
+            3, 1, "(def x 24)\n"]
+           [ns-file ns name file line column source]))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -179,13 +176,13 @@
     (change-ns! 'rksm.system-navigator.test.dummy-3 new-src true)
     ; (change-ns! 'rksm.system-navigator.test.dummy-3 new-src false)
 
-     (testing "evaluation"
-       (is (= 24
-              (-> 'rksm.system-navigator.test.dummy-3/x find-var deref)))
-       (is (= 67
-              (last ((-> 'rksm.system-navigator.test.dummy-3/test-func find-var deref) 1))))
-       (is (nil? (find-var 'rksm.system-navigator.test.dummy-3/foo))))
-
+    (testing "evaluation"
+      (is (= 24
+             (-> 'rksm.system-navigator.test.dummy-3/x find-var deref)))
+      (is (= 67
+             (last ((-> 'rksm.system-navigator.test.dummy-3/test-func find-var deref) 1))))
+      (is (nil? (find-var 'rksm.system-navigator.test.dummy-3/foo))))
+    
     (testing "write to file"
       (is (= new-src (slurp test-file-2))
           "written source"))
@@ -219,28 +216,22 @@
                          :column 1,:line 7, :end-column 1, :end-line 10})}]
         (is (= expected (:changes change)))))
 
-     (let [expected [{:tag nil,
-                      :ns 'rksm.system-navigator.test.dummy-3,
-                      :name 'dummy-atom,
-                      :file "rksm/system_navigator/test/dummy_3.clj",
-                      :column 1, :line 3
-                      :end-column 1, :end-line 4}
-                     {:ns 'rksm.system-navigator.test.dummy-3,
-                      :name 'x,
-                      :file "rksm/system_navigator/test/dummy_3.clj",
-                      :column 1,:line 5,
-                      :end-column 1, :end-line 6, :source "(def x 24)\n"
-                      :tag nil}
-                     {:ns 'rksm.system-navigator.test.dummy-3,
-                      :name 'test-func,
-                      :file "rksm/system_navigator/test/dummy_3.clj",
-                      :column 1, :line 7,
-                      :end-line 10, :end-column 1
-                       :source "(defn test-func\n[y]\n(swap! dummy-atom conj (+ x y 42)))\n",
-                      :tag nil,
-                      :arglists '([y])}]]
+    (let [expected [{:ns 'rksm.system-navigator.test.dummy-3, :name 'dummy-atom,
+                     :file "rksm/system_navigator/test/dummy_3.clj",
+                     :line 3,:column 1}
+                    {:ns 'rksm.system-navigator.test.dummy-3, :name 'x,
+                     :file "rksm/system_navigator/test/dummy_3.clj",
+                     :line 5, :column 1,
+                     :source "(def x 24)\n"}
+                    {:ns 'rksm.system-navigator.test.dummy-3,
+                     :name 'test-func,
+                     :file "rksm/system_navigator/test/dummy_3.clj",
+                     :line 7 :column 1,
+                     :source "(defn test-func\n[y]\n(swap! dummy-atom conj (+ x y 42)))\n",}]]
        (is (= expected
-              (:interns (namespace-info 'rksm.system-navigator.test.dummy-3)))))))
+              (->> 'rksm.system-navigator.test.dummy-3
+                namespace-info :interns
+                (map #(select-keys % [:ns :name :file :line :column :source]))))))))
 
 
 (deftest modify-ns-with-known-file
@@ -359,6 +350,10 @@
 (comment
 
  (run-tests *ns*)
+ 
+ (let [w (java.io.StringWriter.)]
+   (binding [*test-out* w]
+    (run-tests *ns*) w))
  
  (->> (ns-interns *ns*) vals (map meta) (filter #(contains? % :test)) (map :name))
 
