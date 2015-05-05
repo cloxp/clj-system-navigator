@@ -218,7 +218,7 @@
 
     (let [expected [{:ns 'rksm.system-navigator.test.dummy-3, :name 'dummy-atom,
                      :file "rksm/system_navigator/test/dummy_3.clj",
-                     :line 3,:column 1}
+                     :line 3,:column 1 :source "dummy-atom"}
                     {:ns 'rksm.system-navigator.test.dummy-3, :name 'x,
                      :file "rksm/system_navigator/test/dummy_3.clj",
                      :line 5, :column 1,
@@ -353,7 +353,12 @@
  
  (let [w (java.io.StringWriter.)]
    (binding [*test-out* w]
-    (run-tests *ns*) w))
+     (run-tests 'rksm.system-navigator.changesets-test
+                'rksm.system-navigator.completions-test
+                'rksm.system-navigator.ns.internals-test
+                'rksm.system-navigator.search-test
+                'rksm.system-navigator.system-browser-test)
+     w))
  
  (->> (ns-interns *ns*) vals (map meta) (filter #(contains? % :test)) (map :name))
 
