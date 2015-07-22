@@ -5,14 +5,13 @@
             :url "http://opensource.org/licenses/MIT"}
   :source-paths ["src/main/clojure"]
   :test-paths ["src/test/clojure"]
-  :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.rksm/system-files "0.1.5"]
-                 [org.rksm/cloxp-source-reader "0.1.6"]
+  :dependencies [[org.clojure/clojure "1.7.0"]
+                 [org.rksm/system-files "0.1.6"]
+                 [org.rksm/cloxp-source-reader "0.1.8"]
                  [org.rksm/cloxp-repl "0.1.7"]
-                 [org.clojure/data.json "0.2.3"]
+                 [org.clojure/data.json "0.2.6"]
                  [im.chit/iroh "0.1.11"]
-                 [compliment/compliment "0.2.0"]
-                 [org.clojure/tools.nrepl "0.2.7"]
+                 [compliment "0.2.4"]
                  [com.cemerick/pomegranate "0.3.0"]
-                 [http-kit "2.1.16"]
-                 [org.clojure/tools.reader "0.9.1"]])
+                 [http-kit "2.1.19"]
+                 [org.clojure/tools.reader "0.9.2"]])

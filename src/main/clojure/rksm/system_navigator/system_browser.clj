@@ -2,7 +2,6 @@
   (:require [rksm.system-navigator.ns.internals :as i]
             [rksm.cloxp-source-reader.core :as src-rdr]
             [rksm.system-files :as fm]
-            [rksm.system-files.cljx :as cljx]
             [rksm.system-navigator.changesets :as cs]
             [rksm.cloxp-repl :as repl]
             [clojure.string :as s]
@@ -63,9 +62,6 @@
 
     (eval-and-update-meta! sym new-source file)
     (update-source-pos-of-defs-below! sym new-source old-src)
-
-    (if (= ext ".cljx")
-      (cljx/ns-compile-cljx->cljs ns-name file))
 
     (let [old-src (i/file-source-for-sym sym file)
           change (cs/record-change! sym new-source old-src)]
@@ -166,15 +162,13 @@
                       [])
         changed-vars (atom [])
         ext (if file (str (re-find #"\.[^\.]+$" (str file))))
-        rel-path (fm/ns-name->rel-path ns-name ext)
-        cljx? (= ext ".cljx")]
+        rel-path (fm/ns-name->rel-path ns-name ext)]
     (if (find-ns ns-name)
       (install-watchers ns-name changed-vars))
     (try
       (repl/eval-string new-source ns-name
                         {:file rel-path, :throw-errors? true, :line-offset 0})
       (finally (uninstall-watchers ns-name)))
-    (if cljx? (cljx/ns-compile-cljx->cljs ns-name file))
     (let [new-ns-info (:interns (i/namespace-info ns-name file))
           diff (diff-ns ns-name new-source old-src new-ns-info old-ns-info @changed-vars)]
       (doseq [{n :name} (:removed diff)]

@@ -4,16 +4,15 @@
             [rksm.system-navigator.system-browser :refer :all]
             [rksm.system-navigator.ns.internals :refer (source-for-symbol namespace-info)]
             [rksm.system-files :as fm]
-            [rksm.system-files.cljx :as cljx]
             [rksm.system-navigator.changesets :as cs]
             [clojure.java.io :as io]))
 
-(cljx/enable-cljx-load-support!)
-(require 'rksm.system-navigator.test.cljx-dummy :reload)
+
+(require 'rksm.system-navigator.test.cljc-dummy :reload)
 
 (defonce test-file-1 (fm/file-for-ns 'rksm.system-navigator.test.dummy-1))
 (defonce test-file-2 (fm/file-for-ns 'rksm.system-navigator.test.dummy-3))
-(defonce test-file-3 (fm/file-for-ns 'rksm.system-navigator.test.cljx-dummy))
+(defonce test-file-3 (fm/file-for-ns 'rksm.system-navigator.test.cljc-dummy))
 (defonce orig-source-1 (slurp test-file-1))
 (defonce orig-source-2 (slurp test-file-2))
 (defonce orig-source-3 (slurp test-file-3))
@@ -35,7 +34,7 @@
   (spit test-file-3 orig-source-3)
   (require 'rksm.system-navigator.test.dummy-1 :reload)
   (require 'rksm.system-navigator.test.dummy-3 :reload)
-  (require 'rksm.system-navigator.test.cljx-dummy :reload)
+  (require 'rksm.system-navigator.test.cljc-dummy :reload)
   (reset! cs/current-changeset []))
 
 ; Here we register my-test-fixture to be called once, wrapping ALL tests
@@ -322,26 +321,27 @@
       (is (= 5 (eval (read-string "(multi-test-2/multi-f :a 3)")))))))
 
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-; cljx specific
+; cljc specific
 
 (deftest modify-ns-diff-from-runtime
 
-  (require 'rksm.system-navigator.test.cljx-dummy :reload)
+  (require 'rksm.system-navigator.test.cljc-dummy :reload)
   
   (testing "runtime changes"
-    (is (= {:added [] :removed [] :changed [{:file "rksm/system_navigator/test/cljx_dummy.cljx",
+    (is (= {:added [] :removed [] :changed [{:file "rksm/system_navigator/test/cljc_dummy.cljc",
                                              :source "(def x 22)\n",
                                              :prev-source "(def x 23)\n",
                                              :name 'x,
-                                             :ns 'rksm.system-navigator.test.cljx-dummy,
-                                             :end-column 1, :end-line 15, :line 14, :column 1}]}
+                                             :ns 'rksm.system-navigator.test.cljc-dummy,
+                                             :end-column 1, :end-line 14, :line 13, :column 1}]}
            (change-ns-in-runtime!
-            'rksm.system-navigator.test.cljx-dummy
+            'rksm.system-navigator.test.cljc-dummy
             (clojure.string/replace orig-source-3 #"def x 23" "def x 22")
             orig-source-3))))
   
-  (testing "cljx -> cljs compilation"
-    (let [expected-cljs-file (io/file (str project-dir "/target/classes/rksm/system_navigator/test/cljx_dummy.cljs"))]
+  ; this test was based on cljx, what should happen with cljc?
+  #_(testing "cljc -> cljs compilation"
+    (let [expected-cljs-file (io/file (str project-dir "/target/classes/rksm/system_navigator/test/cljc_dummy.cljs"))]
       (is (.exists expected-cljs-file))
       (.delete expected-cljs-file))))
 

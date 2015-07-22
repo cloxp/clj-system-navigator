@@ -29,7 +29,7 @@
    (let [ns (or (some-> (namespace sym) symbol) 'user)]
      (-> (add-source-to-interns
           ns [(symbol-info ns (-> sym name symbol))]
-          {:file ns-file-path, :cljx true})
+          {:file ns-file-path})
        first :source))
    (try (clojure.repl/source-fn sym)
      (catch Exception e nil))))
