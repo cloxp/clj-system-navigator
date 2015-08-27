@@ -1,9 +1,10 @@
 (ns rksm.system-navigator.search
-    (:require [rksm.system-files :refer (loaded-namespaces source-reader-for-ns)]))
+  (:require [rksm.system-files :refer (loaded-namespaces  file-for-ns)]
+            [clojure.java.io :refer [reader]]))
 
-(defn- code-search-single-ns
-  [re ns-name]
-  (if-let [rdr (source-reader-for-ns ns-name)]
+(defn- code-search-single-ns-and-file
+  [re ns-name file]
+  (if-let [rdr (reader file)]
     (with-open [rdr rdr
                 lrdr (clojure.lang.LineNumberingPushbackReader. rdr)]
       (loop [results {:ns ns-name :finds []}]
@@ -13,15 +14,31 @@
               (update-in results [:finds]
                          conj {:line (.getLineNumber lrdr)
                                :match match
-                               :source line})
-             results))
-          results)))))
+                               :source line
+                               :file (.getPath file)})
+              results))
+          results)))
+    []))
+
+(defn- code-search-single-ns
+  [re ns-name]
+  (sequence
+   (comp (filter boolean)
+         (map
+          (partial code-search-single-ns-and-file re ns-name)))
+   ; this is to ensure we find code of a ns even if there are multiple
+   ; files. this version here is a trade off between speed and thoroughness...
+   [(file-for-ns ns-name nil #"\.clj$")
+    (file-for-ns ns-name nil #"\.cljc$")
+    (file-for-ns ns-name nil #"\.cljs$")]))
 
 (defn code-search-ns
   [re & ns-names]
-  (->> ns-names
-       (map (partial code-search-single-ns re))
-       (filter boolean)))
+  (sequence
+   (comp (filter boolean)
+         (mapcat #(code-search-single-ns re %))
+         (filter boolean))
+   ns-names))
 
 (defn code-search
   "options: {:except #{SYMBOLS} :matching RE}"
@@ -31,7 +48,19 @@
         (filter #(-> % :finds empty? not) nss)))
 
 (comment
-  (code-search #"FIXME" :match-ns #"rksm")
+
+ (code-search-ns #"FIXME"
+                 'rksm.system-navigator.search
+                 'rksm.system-navigator.clojars)
+
+ (->> (code-search-ns #"string\?" 'cljs.core)
+   (mapcat :finds)
+   (map :file)
+   distinct)
+
+ (rksm.system-files/files-for-ns 'rksm.system-navigator.search)
+
+ (code-search #"FIXME" :match-ns #"rksm")
 
   (time
     (->> (->> (loaded-namespaces) (take 10))
