@@ -1,13 +1,12 @@
 (ns rksm.system-navigator.clojars
   (:require [org.httpkit.client :as http]
-            [clojure.tools.reader.edn :as edn]
             [clojure.tools.reader.reader-types :as t]
             [clojure.data.json :as json]
             [clojure.string :as s]
-            [cemerick.pomegranate :refer (classloader-hierarchy get-classpath add-dependencies)]
+            [cemerick.pomegranate :refer (add-dependencies)]
             [rksm.system-files.jar-util :refer (namespaces-in-jar)]
-            [rksm.system-files :as sf :refer (file)])
-  (:import [java.util.zip.GZIPInputStream]))
+            [rksm.system-files :as sf])
+  (:import (java.util.zip GZIPInputStream)))
 
 (defn clojars-feed-stream
   []
@@ -29,7 +28,7 @@
   ([]
   (let [rdr (t/string-push-back-reader (clojars-uncompressed-content))]
     (doall (loop [read []]
-             (if-let [o (edn/read {:eof nil} rdr)]
+             (if-let [o (clojure.edn/read {:eof nil} rdr)]
                (recur (cons o read))
                read))))))
 

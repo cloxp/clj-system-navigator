@@ -42,5 +42,5 @@
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 (comment
-  (run-tests 'rksm.system-navigator.search-test)
+  (run-tests)
   )

@@ -1,8 +1,7 @@
 (ns rksm.system-navigator.completions
   (:require [compliment.core :as comp]
             [clojure.data.json :as json]
-            [iroh.core :as ic]
-            [iroh.pretty.classes :as ip]))
+            [hara.reflect.core.query :as q]))
 
 ; delegate - for transparency into objects
 ; >ns - for importing object elements into a namespace
@@ -25,7 +24,7 @@
 
 (defn class->string
   [cl]
-  (ip/class-convert cl :string))
+  (pr-str cl))
 
 (defn member-info
   [ele]
@@ -35,7 +34,9 @@
 
 (defn instance-elements
   [obj]
-  (->> obj ic/.* (map member-info)))
+  (as-> obj it
+    (q/query-instance it ".*")
+    (map member-info it)))
 
 (defn instance-elements->json
   [obj]
@@ -43,7 +44,6 @@
 
 (comment
  (merge-with concat {:foo [23]} {:foo [34]})
- (-> (ic/.* "foo") last member-info)
  (get-completions->json "rk")
  (instance-elements "foo")
  (let [elems (instance-elements "foo")]
@@ -60,12 +60,14 @@
  (get (instance-elements "foo") "equals")
  (instance-elements->json "foo")
  (reduce conj)
+ (ip/class-convert (type "foo") :string)
+ 
  (hash-map :foo 123)
- (->> (ic/.* "foo") first ((fn [ele] (hash-map (:name ele) (:params ele)))) merge)
- (-> (ic/.* "foo") first :type)
- (ic/.* "foo")
- (-> (ic/.* "foo") first)
- (-> (ic/.* "foo") first (select-keys [:name]))
- (-> (ic/.* "foo") first :params)
- (-> (ic/.* "foo") first )
+ (->> (q/query-instance "foo" ".*") first ((fn [ele] (hash-map (:name ele) (:params ele)))) merge)
+ (-> (q/query-instance "foo" ".*") first :type)
+ (q/query-instance "foo" ".*")
+ (-> (q/query-instance "foo" ".*") first)
+ (-> (q/query-instance "foo" ".*") first (select-keys [:name]))
+ (-> (q/query-instance "foo" ".*") first :params)
+ (-> (q/query-instance "foo" ".*") first )
  )

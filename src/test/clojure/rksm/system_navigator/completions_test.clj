@@ -19,6 +19,9 @@
 ; -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 (comment
+  (rksm.system-navigator.clojars/install-clojar-package "zcaudate" "hara.object" "2.8.7")
+
+
   (run-tests 'rksm.system-navigator.completions-test)
 
   (filter #(= "equals" (:name %)) (instance-elements "foo"))
